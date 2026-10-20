@@ -28,9 +28,8 @@ html {
   text-size-adjust: 100%;
   scroll-padding-top: var(--header-h);
 }
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
-}
+/* no CSS smooth scrolling: in-page links glide via main.js, while a link that opens the page
+   at a section jumps straight there instead of animating past the hero film */
 body {
   margin: 0;
   background: var(--bg);

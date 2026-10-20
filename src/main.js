@@ -121,7 +121,10 @@ $$("[data-copy-template]").forEach((button) => {
 });
 
 /* hero film: plays once, then fades back to the night still.
-   No autoplay with reduced motion, Save-Data, a slow start, or after it already played this session. */
+   It only starts while the hero is on screen (a link straight to #training must not use it up
+   unseen) and waits for the network however slow it is. With reduced motion, Save-Data, or a
+   browser that refuses autoplay (e.g. iOS Low Power Mode) it is offered with a play button
+   instead. Once it has played this session there is no replay. */
 const video = $("[data-hero-video]");
 const toggle = $("[data-video-toggle]");
 const toggleLabel = $("[data-video-label]");
@@ -136,25 +139,28 @@ function rememberPlayed() {
 }
 
 if (video && toggle) {
-  let state = "idle";          // idle | playing | paused | ended
+  let state = "idle";          // idle | offer | playing | paused | ended
+  let autoplay = false;        // start by itself the next time the hero is on screen
+  let inView = false;
   let pausedByScroll = false;
   let frame = 0;
 
-  // the control only exists while the film is on screen, so it can be paused;
-  // once the film has ended there is deliberately no replay
+  // the button only offers what the film can still do; after the end there is deliberately no replay
   const LABELS = {
+    offer: ["播放宣传片", "播放宣传片"],
     playing: ["暂停", "暂停宣传片"],
     paused: ["继续播放", "继续播放宣传片"]
   };
   const setState = (next) => {
     state = next;
-    const onScreen = next === "playing" || next === "paused";
-    toggle.hidden = !onScreen;
+    const label = LABELS[next];
+    toggle.hidden = !label;
     toggle.dataset.state = next;
-    if (onScreen) {
-      toggleLabel.textContent = LABELS[next][0];
-      toggle.setAttribute("aria-label", LABELS[next][1]);
+    if (label) {
+      toggleLabel.textContent = label[0];
+      toggle.setAttribute("aria-label", label[1]);
     }
+    const onScreen = next === "playing" || next === "paused";
     video.classList.toggle("is-on", onScreen);
     progress.classList.toggle("is-on", onScreen);
   };
@@ -171,20 +177,28 @@ if (video && toggle) {
     if (reachedEnd()) finish();
     else if (state === "playing") frame = requestAnimationFrame(tick);
   };
+  const pause = () => {
+    video.pause();
+    setState("paused");
+  };
   const play = () => {
     if (video.preload !== "auto") {
       video.preload = "auto";
       video.load();
     }
     return video.play().then(() => {
+      // on a slow network the visitor may have scrolled on before the film could start
+      if (!inView) {
+        pause();
+        pausedByScroll = true;
+        return;
+      }
       setState("playing");
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(tick);
-    }, () => { if (state !== "playing") setState("idle"); });
-  };
-  const pause = () => {
-    video.pause();
-    setState("paused");
+    }, (error) => {
+      if (error.name === "NotAllowedError" && state !== "playing") setState("offer");
+    });
   };
 
   video.addEventListener("ended", finish);
@@ -195,29 +209,33 @@ if (video && toggle) {
     else play();
   });
 
-  // pause when the hero leaves the screen; finish the single play when it comes back
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting && state === "playing") {
-        pause();
-        pausedByScroll = true;
-      } else if (entry.isIntersecting && pausedByScroll) {
-        pausedByScroll = false;
-        play();
-      }
-    }, { threshold: 0.25 }).observe(hero);
-  }
-
-  setState("idle");
+  // start once the hero is on screen; pause when it leaves, resume when it comes back
+  const onView = (visible) => {
+    inView = visible;
+    if (!visible && state === "playing") {
+      pause();
+      pausedByScroll = true;
+    } else if (visible && pausedByScroll) {
+      pausedByScroll = false;
+      play();
+    } else if (visible && autoplay) {
+      autoplay = false;
+      play();
+    }
+  };
 
   const saveData = Boolean(navigator.connection && navigator.connection.saveData);
-  if (!reduceMotion.matches && !saveData && !playedThisSession()) {
-    const giveUp = setTimeout(() => {
-      if (state !== "playing") {
-        video.pause();
-        setState("idle");
-      }
-    }, 4000);
-    play().finally(() => clearTimeout(giveUp));
+  if (playedThisSession()) setState("ended");
+  else if (reduceMotion.matches || saveData) setState("offer");
+  else {
+    setState("idle");
+    autoplay = true;
+  }
+
+  // "on screen" means at least a quarter of the hero; isIntersecting alone is true for any sliver
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([entry]) => onView(entry.intersectionRatio >= 0.25), { threshold: 0.25 }).observe(hero);
+  } else {
+    onView(true);
   }
 }
