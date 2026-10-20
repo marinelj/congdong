@@ -74,6 +74,12 @@
         <source src="./media/video/hero-loop-16x9.mp4" type="video/mp4" media="(min-width: 960px)">
         <source src="./media/video/hero-loop-9x16.mp4" type="video/mp4">
       </video>
+      <script>
+        /* start fetching the film while the rest of the page loads; src/main.js decides when it plays */
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches && !(navigator.connection && navigator.connection.saveData)) {
+          document.currentScript.previousElementSibling.preload = "auto";
+        }
+      </script>
       <div class="hero-shade"></div>
       <span class="hero-progress" data-video-progress aria-hidden="true"></span>
     </div>

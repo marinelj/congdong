@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Drives headless Chrome over the DevTools protocol (Node's built-in WebSocket, no dependencies).
 //
-//   node scripts/browser-check.mjs video [url]                     hero film in real time: plays once, pause, no replay;
-//                                                                  opens at the top, autoplay refused, reduced motion, slow network
+//   node scripts/browser-check.mjs video [url]                     hero film in real time: plays once per page open, pause;
+//                                                                  opens at the top, autoplay refused, WeChat, reduced motion, slow network
 //   node scripts/browser-check.mjs page <url> <width> <height>     console errors, broken images, anchors, overflow
 //   node scripts/browser-check.mjs shot <url> <width> <height> <out.png> [--full] [--reduced-motion]
 //
@@ -114,14 +114,14 @@ async function goto(page, url, width, height) {
   await loaded;
 }
 
-// each scenario opens its own tab, so sessionStorage (the "already played" flag) starts empty
+// each scenario opens its own tab
 async function videoCheck(url) {
   const log = [];
   const film = (page, scenario, at) => page.evaluate(`(() => {
     const v = document.querySelector("[data-hero-video]"), t = document.querySelector("[data-video-toggle]");
     return { scenario: ${JSON.stringify(scenario)}, at: ${JSON.stringify(at)}, state: t.dataset.state,
       button: t.hidden ? "hidden" : t.textContent.trim(), time: Math.round(v.currentTime * 10) / 10,
-      filmVisible: v.classList.contains("is-on"), played: sessionStorage.getItem("congdong-hero-played"),
+      filmVisible: v.classList.contains("is-on"), preload: v.preload,
       scrollY: Math.round(scrollY), address: location.href.replace(location.origin, "") };
   })()`).then((row) => log.push(row));
   const click = (page) => page.evaluate(`document.querySelector("[data-video-toggle]").click()`);
@@ -136,9 +136,9 @@ async function videoCheck(url) {
   await click(page); await sleep(1000); await film(page, "top", "paused for 1s");
   await click(page); await sleep(500); await film(page, "top", "resumed");
   await sleep(10500); await film(page, "top", "after the end");
-  // a second visit in the same session must not autoplay, and there is no replay
+  // every time the page opens the film plays once again (it never loops within a visit)
   await goto(page, url, 390, 844);
-  await sleep(2500); await film(page, "top", "reload, same session");
+  await sleep(2500); await film(page, "top", "opened again in the same tab");
   done(page, "top");
 
   // an address with a #section still opens at the top, without the #section, and the film plays
@@ -166,6 +166,25 @@ async function videoCheck(url) {
   await goto(page, url, 390, 844);
   await sleep(2000); await film(page, "autoplay refused", "after 2s");
   done(page, "autoplay refused");
+
+  // WeChat's in-app browser: autoplay is refused except from the WeixinJSBridge callback
+  page = await openPage();
+  await page.send("Emulation.setUserAgentOverride", {
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.50"
+  });
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `
+    const realPlay = HTMLMediaElement.prototype.play;
+    let insideBridge = false;
+    HTMLMediaElement.prototype.play = function () {
+      return insideBridge ? realPlay.call(this) : Promise.reject(new DOMException("autoplay refused", "NotAllowedError"));
+    };
+    setTimeout(() => {
+      window.WeixinJSBridge = { invoke: (name, args, callback) => setTimeout(() => { insideBridge = true; callback({}); insideBridge = false; }, 50) };
+      document.dispatchEvent(new Event("WeixinJSBridgeReady"));
+    }, 1500);` });
+  await goto(page, url, 390, 844);
+  await sleep(4000); await film(page, "WeChat", "4s after opening");
+  done(page, "WeChat");
 
   page = await openPage();
   await page.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });

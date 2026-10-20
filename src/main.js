@@ -120,30 +120,29 @@ $$("[data-copy-template]").forEach((button) => {
   });
 });
 
-/* hero film: plays once by itself, then fades back to the night still. The only control is a
-   pause button while it runs; there is no play or replay button. It starts only while the hero is
-   on screen and waits for the network however slow it is. With reduced motion, Save-Data, a
-   browser that refuses autoplay (e.g. iOS Low Power Mode), or once it has played this session,
+/* hero film: plays once by itself every time the page opens, then fades back to the night still.
+   It never loops, and the only control is a pause button while it runs (no play or replay button).
+   It plays only while the hero is on screen and waits for the network however slow it is.
+   With reduced motion, Save-Data, or a browser that refuses autoplay (e.g. iOS Low Power Mode)
    the night still simply stays. */
 const video = $("[data-hero-video]");
 const toggle = $("[data-video-toggle]");
 const toggleLabel = $("[data-video-label]");
 const progress = $("[data-video-progress]");
-const PLAYED_KEY = "congdong-hero-played";
-
-function playedThisSession() {
-  try { return sessionStorage.getItem(PLAYED_KEY) === "1"; } catch { return false; }
-}
-function rememberPlayed() {
-  try { sessionStorage.setItem(PLAYED_KEY, "1"); } catch { /* storage unavailable */ }
-}
 
 if (video && toggle) {
+  const wanted = !reduceMotion.matches && !(navigator.connection && navigator.connection.saveData);
   let state = "idle";          // idle | playing | paused | ended
-  let autoplay = false;        // start by itself the next time the hero is on screen
-  let inView = false;
+  let autoplay = wanted;       // start by itself once the hero is on screen
   let pausedByScroll = false;
   let frame = 0;
+
+  // "on screen" means at least a quarter of the hero, the same line the observer below uses
+  const heroShare = () => {
+    const box = hero.getBoundingClientRect();
+    return Math.max(0, Math.min(box.bottom, window.innerHeight) - Math.max(box.top, 0)) / box.height;
+  };
+  let inView = heroShare() >= 0.25;
 
   // the control only exists while the film is on screen, so it can be paused
   const LABELS = {
@@ -168,7 +167,6 @@ if (video && toggle) {
     if (state === "ended") return;
     video.pause();
     setState("ended");
-    rememberPlayed();
   };
   const reachedEnd = () => video.duration > 0 && video.currentTime >= video.duration - 0.05;
   const tick = () => {
@@ -195,7 +193,15 @@ if (video && toggle) {
       setState("playing");
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(tick);
-    }, () => { /* refused or interrupted: keep the current state, so a refused autoplay leaves the still */ });
+    }, () => {
+      // refused (e.g. iOS Low Power Mode) or interrupted: the still stays, and a later chance may retry
+      if (state === "idle") autoplay = wanted;
+    });
+  };
+  const autostart = () => {
+    if (!autoplay || !inView || state !== "idle") return;
+    autoplay = false;
+    play();
   };
 
   video.addEventListener("ended", finish);
@@ -206,7 +212,7 @@ if (video && toggle) {
     else play();
   });
 
-  // start once the hero is on screen; pause when it leaves, resume when it comes back
+  // pause when the hero leaves the screen, resume when it comes back
   const onView = (visible) => {
     inView = visible;
     if (!visible && state === "playing") {
@@ -215,23 +221,23 @@ if (video && toggle) {
     } else if (visible && pausedByScroll) {
       pausedByScroll = false;
       play();
-    } else if (visible && autoplay) {
-      autoplay = false;
-      play();
+    } else {
+      autostart();
     }
   };
 
-  const saveData = Boolean(navigator.connection && navigator.connection.saveData);
-  if (playedThisSession()) setState("ended");
-  else {
-    setState("idle");
-    autoplay = !reduceMotion.matches && !saveData;
-  }
-
-  // "on screen" means at least a quarter of the hero; isIntersecting alone is true for any sliver
+  setState("idle");
+  autostart();          // the page opens at the top, so there is no need to wait for the observer
   if ("IntersectionObserver" in window) {
     new IntersectionObserver(([entry]) => onView(entry.intersectionRatio >= 0.25), { threshold: 0.25 }).observe(hero);
-  } else {
-    onView(true);
+  }
+
+  // WeChat's in-app browser may only let the film start from its bridge-ready callback
+  if (wanted && /MicroMessenger/i.test(navigator.userAgent)) {
+    const viaBridge = () => window.WeixinJSBridge.invoke("getNetworkType", {}, () => {
+      if (state === "idle" && inView) play();
+    });
+    if (window.WeixinJSBridge) viaBridge();
+    else document.addEventListener("WeixinJSBridgeReady", viaBridge, false);
   }
 }
