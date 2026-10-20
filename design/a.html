@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F4D">
+<title>方向 A · 赛场蓝｜丛动体育</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root {
+    --navy: #0B1F4D;
+    --blue: #1E56E6;
+    --orange: #FF5A1F;
+    --amber: #FFB020;
+    --ink: #0A1633;
+    --paper: #F2F5FB;
+    --line: #D9E1F0;
+    --muted: #4A5878;
+    --display: "Smiley Sans Oblique", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --latin: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --focus: #FFB020;
+    --dock-bg: var(--navy);
+    --dock-fg: #fff;
+    --sheet-bg: #fff;
+    --sheet-fg: var(--ink);
+  }
+  html { background: #071437; }
+  body { background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.65; }
+
+  /* top bar floats over the hero */
+  .topbar {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10;
+    width: min(100%, 480px); display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 12px 0 16px;
+  }
+  .brand img { width: 120px; height: auto; }
+  .icon-btn {
+    width: 44px; height: 44px; display: grid; place-items: center;
+    border: 0; border-radius: 50%; background: rgba(7, 20, 55, .35); color: #fff; cursor: pointer;
+  }
+
+  /* hero */
+  .hero {
+    position: relative; isolation: isolate; overflow: hidden;
+    min-height: min(100svh, 780px); display: flex; align-items: flex-end;
+    background: var(--navy); color: #fff;
+  }
+  .hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -3; }
+  .hero-shade {
+    position: absolute; inset: 0; z-index: -2;
+    background:
+      linear-gradient(180deg, rgba(11,31,77,.6) 0%, rgba(11,31,77,0) 22%),
+      linear-gradient(180deg, rgba(11,31,77,0) 38%, rgba(11,31,77,.78) 66%, var(--navy) 92%);
+  }
+  .hero-stripes {
+    position: absolute; z-index: -1; top: 86px; left: 16px; width: 132px; height: 14px;
+    background: repeating-linear-gradient(-60deg, var(--orange) 0 5px, transparent 5px 11px);
+  }
+  .hero-body { width: 100%; padding: 0 20px 96px; }
+  .tag {
+    display: inline-block; margin: 0 0 12px; padding: 4px 16px 4px 10px;
+    font-size: 13px; font-weight: 700; line-height: 1.4; letter-spacing: .04em; color: var(--ink);
+    background: linear-gradient(90deg, var(--orange), var(--amber));
+    clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .slogan {
+    margin: 0; font-family: var(--display); font-weight: 400;
+    font-size: clamp(68px, 21vw, 96px); line-height: .95; letter-spacing: -.01em;
+    text-shadow: 0 2px 24px rgba(7, 20, 55, .35);
+  }
+  .slogan .xin {
+    font-family: var(--latin); font-style: italic; font-weight: 800;
+    font-size: .62em; color: var(--amber); margin: 0 .04em 0 .02em; vertical-align: .16em;
+  }
+  /* Barlow's own ī macron is barely wider than the dot, so draw a clear one over a dotless ı */
+  .slogan .macron { position: relative; }
+  .slogan .macron::before {
+    content: ""; position: absolute; left: -.04em; right: -.12em; top: .3em; height: .09em;
+    background: currentColor; transform: skewX(-12deg);
+  }
+  .lede { margin: 14px 0 0; max-width: 21em; font-size: 16px; line-height: 1.6; color: rgba(255,255,255,.9); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+  .btn {
+    position: relative; isolation: isolate;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 50px; padding: 0 24px; border: 0; cursor: pointer;
+    font-size: 16px; font-weight: 700; line-height: 1; text-decoration: none; letter-spacing: .02em;
+  }
+  .btn::before { content: ""; position: absolute; inset: 0; z-index: -1; transform: skewX(-12deg); border-radius: 3px; }
+  .btn-primary { color: var(--ink); }
+  .btn-primary::before { background: linear-gradient(90deg, var(--orange), #FF8A1F); }
+  .btn-ghost { color: #fff; }
+  .btn-ghost::before { box-shadow: inset 0 0 0 2px rgba(255,255,255,.85); }
+  .video-toggle {
+    position: absolute; right: 14px; bottom: 74px; width: 36px; height: 36px;
+    display: grid; place-items: center; border: 0; border-radius: 50%;
+    background: rgba(7, 20, 55, .45); color: #fff; cursor: pointer;
+  }
+  .video-toggle .i-play { display: none; }
+  .video-toggle[data-state="paused"] .i-play { display: block; }
+  .video-toggle[data-state="paused"] .i-pause { display: none; }
+
+  /* the two business modules */
+  .modules { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: -52px 16px 0; }
+  .module {
+    display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 16px;
+    background: #fff; color: var(--ink); text-decoration: none; border-radius: 6px;
+    border-top: 4px solid var(--blue); box-shadow: 0 12px 28px rgba(11, 31, 77, .16);
+  }
+  .module:nth-child(2) { border-top-color: var(--orange); }
+  .module-no { font: italic 800 22px/1 var(--latin); color: var(--blue); }
+  .module:nth-child(2) .module-no { color: #D94A12; }
+  .module strong { font: 400 23px/1.15 var(--display); }
+  .module span:last-child { font-size: 13px; line-height: 1.5; color: var(--muted); }
+  .module .todo { color: var(--muted); }
+
+  .partners {
+    display: flex; align-items: center; gap: 16px; margin: 22px 16px 0; padding: 12px 0;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); white-space: nowrap; overflow-x: auto;
+  }
+  .partner { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .partner i { font: 700 13px/1 var(--latin); font-style: normal; letter-spacing: .06em; margin-left: 3px; }
+
+  /* facilities */
+  .facilities { padding: 34px 0 120px; }
+  .section-head { padding: 0 16px; }
+  .kicker { margin: 0; font: italic 800 15px/1 var(--latin); letter-spacing: .14em; color: var(--blue); }
+  .section-head h2 { margin: 6px 0 2px; font: 400 38px/1.1 var(--display); color: var(--navy); }
+  .section-head p:last-child { margin: 0; font-size: 14px; color: var(--muted); }
+  .chips {
+    position: sticky; top: 0; z-index: 5; margin-top: 10px; padding: 12px 16px;
+    background: rgba(242, 245, 251, .94); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  }
+  .chip {
+    min-height: 38px; padding: 0 15px; border-radius: 3px; transform: skewX(-10deg);
+    border: 1.5px solid #C2CDE4; background: #fff; color: var(--navy); font-size: 14px; font-weight: 600;
+  }
+  .chip[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .cards { list-style: none; margin: 2px 0 0; padding: 0 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { position: relative; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 6px; background: var(--navy); color: #fff; }
+  .card:first-child { grid-column: span 2; aspect-ratio: 16 / 10; }
+  .card img { width: 100%; height: 100%; object-fit: cover; }
+  .card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11,31,77,0) 42%, rgba(11,31,77,.9) 100%); }
+  .card-tag {
+    position: absolute; z-index: 1; top: 10px; left: 0; padding: 3px 12px 3px 8px;
+    font-size: 12px; font-weight: 700; line-height: 1.4; color: var(--ink);
+    background: linear-gradient(90deg, var(--orange), var(--amber));
+    clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+  .card-text { position: absolute; z-index: 1; left: 12px; right: 12px; bottom: 10px; }
+  .card-en { font: italic 800 13px/1 var(--latin); letter-spacing: .12em; text-transform: uppercase; color: var(--amber); }
+  .card-name { display: block; margin-top: 4px; font: 400 25px/1.1 var(--display); }
+  .card-note { display: block; font-size: 12px; color: rgba(255,255,255,.82); }
+  .fineprint {
+    margin: 16px 16px 0; padding: 12px 14px; border-left: 4px solid var(--blue);
+    background: #fff; font-size: 13px; line-height: 1.6; color: var(--muted);
+  }
+
+  /* dock + sheet */
+  .dock { box-shadow: 0 -10px 28px rgba(7, 20, 55, .3); }
+  .dock-price { font-size: 13px; }
+  .dock-price strong { font: italic 800 32px/1 var(--latin); color: var(--amber); margin-right: 2px; }
+  .dock-price span { display: block; font-size: 12px; color: rgba(255,255,255,.78); }
+  .dock .btn { min-height: 46px; }
+  .sheet { border-radius: 14px 14px 0 0; }
+  .sheet h2 { margin: 0 0 6px; font: 400 28px/1.2 var(--display); color: var(--navy); }
+  .contact { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .tel {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 4px;
+    background: var(--blue); color: #fff; font-weight: 700; text-decoration: none; font-variant-numeric: tabular-nums;
+  }
+  .btn-copy {
+    width: 100%; min-height: 48px; border: 2px solid var(--navy); border-radius: 4px; background: #fff;
+    color: var(--navy); font-weight: 700; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#facilities">跳到场地设施</a>
+<p class="visually-hidden" data-live aria-live="polite"></p>
+
+<header class="topbar">
+  <a class="brand" href="#top" aria-label="丛动体育首页"><img src="../media/brand/logo-wordmark.png" width="480" height="184" alt="丛动体育 CONGDONG SPORTS"></a>
+  <button class="icon-btn" type="button" data-menu aria-label="打开菜单">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h11"/></svg>
+  </button>
+</header>
+
+<main id="top">
+  <section class="hero" data-hero aria-labelledby="hero-title">
+    <video class="hero-media" data-hero-video muted loop playsinline preload="metadata"
+           poster="../media/video/hero-loop-9x16-poster.jpg" aria-hidden="true">
+      <source src="../media/video/hero-loop-9x16.mp4" type="video/mp4">
+    </video>
+    <div class="hero-shade"></div>
+    <div class="hero-stripes" aria-hidden="true"></div>
+    <div class="hero-body">
+      <p class="tag">北京 · 怀柔基地 / 密云营地</p>
+      <h1 class="slogan" id="hero-title"><span aria-hidden="true">丛<span class="xin">x<span class="macron">ı</span>n</span>而动</span><span class="visually-hidden">丛 xīn 而动</span></h1>
+      <p class="lede">专业篮球、足球、网球场地，住宿和三餐都在园区里。集训和体育生升学规划，一处搞定。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#consult" data-open-sheet>咨询集训</a>
+        <a class="btn btn-ghost" href="#study">体育生升学规划</a>
+      </div>
+    </div>
+    <button class="video-toggle" type="button" data-video-toggle data-state="paused" aria-label="播放背景视频" aria-pressed="true">
+      <svg class="i-pause" width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" rx="1"/><rect x="8.5" y="1" width="3.5" height="12" rx="1"/></svg>
+      <svg class="i-play" width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg>
+    </button>
+  </section>
+
+  <nav class="modules" aria-label="两大业务">
+    <a class="module" href="#facilities">
+      <span class="module-no">01</span>
+      <strong>集训</strong>
+      <span>学校、体育培训机构集训拓展，也可承接团建与交流活动</span>
+    </a>
+    <a class="module" id="study" href="#study">
+      <span class="module-no">02</span>
+      <strong>体育生升学规划</strong>
+      <span>篮球项目：小升初（进入篮球传统校）、初升高</span>
+    </a>
+  </nav>
+
+  <section class="partners" aria-label="官方合作伙伴">
+    <span>官方合作伙伴</span>
+    <span class="partner">美凯<i>MERRY</i></span>
+    <span class="partner">金陵体育<i>JINLING SPORTS</i></span>
+  </section>
+
+  <section class="facilities" id="facilities" aria-labelledby="fac-title">
+    <div class="section-head">
+      <p class="kicker">FACILITIES</p>
+      <h2 id="fac-title">场地设施</h2>
+      <p>怀柔基地 + 密云营地，按项目筛选</p>
+    </div>
+    <div class="chips" data-chips role="group" aria-label="按项目筛选"></div>
+    <ul class="cards" data-facility-list></ul>
+    <p class="fineprint">同期超过两支集训队伍时，园区统一调配场地时间，保证每支队伍每天篮球馆使用不少于 4 小时。</p>
+  </section>
+</main>
+
+<div class="dock" data-dock aria-hidden="true">
+  <p class="dock-price"><strong>380</strong>元/人/天起<span>含住宿、自助三餐、园区场地</span></p>
+  <a class="btn btn-primary" href="#consult" data-open-sheet>立即咨询</a>
+</div>
+
+<dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+  <form method="dialog" class="sheet-inner">
+    <div class="sheet-grabber" aria-hidden="true"></div>
+    <h2 id="sheet-title">预约咨询</h2>
+    <div class="contact">
+      <div class="contact-text">
+        <b>贺老师</b>
+        <small>集训、篮球升学规划都可以咨询</small>
+        <a class="tel" href="tel:18601395386">186 0139 5386</a>
+      </div>
+      <figure class="qr">
+        <img src="../media/brand/wechat-qr.png" width="201" height="202" alt="丛动体育官方微信二维码">
+        <figcaption>微信里长按识别</figcaption>
+      </figure>
+    </div>
+    <button class="btn-copy" type="button" data-copy-template>复制咨询模板，粘贴到微信</button>
+    <p class="copy-status" data-copy-status role="status"></p>
+    <button class="sheet-close" value="close" aria-label="关闭">×</button>
+  </form>
+</dialog>
+
+<script>
+  window.renderFacility = (f, i) => `
+    <li class="card" data-sport="${f.sport}">
+      <img src="../media/img/${f.img}-800.jpg" width="${f.w}" height="${f.h}" alt="${f.base}${f.name}" ${i > 1 ? 'loading="lazy"' : ""}>
+      <span class="card-tag">${f.base}</span>
+      <span class="card-text">
+        <span class="card-en">${f.en}</span>
+        <span class="card-name">${f.name}</span>
+        ${f.note ? `<span class="card-note">${f.note}</span>` : ""}
+      </span>
+    </li>`;
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

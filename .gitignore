@@ -1,0 +1,9 @@
+# temporary downloads and build scratch
+.cache/
+.DS_Store
+# 105 MB source film; copy it from the brand folder if you need to rebuild the hero loop
+assets-src/video/
+# local toolchain, dependencies and build output
+.tools/
+node_modules/
+dist/

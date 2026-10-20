@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0B0D">
+<title>方向 C · 夜场霓虹｜丛动体育</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root {
+    --bg: #0A0B0D;
+    --surface: #15171B;
+    --line: #2B2F36;
+    --text: #F2F3F5;
+    --muted: #9AA0A9;
+    --electric: #2A62F5;
+    --electric-2: #5B8CFF;
+    --orange: #FF5A1F;
+    --giant: "Anton", Impact, "Arial Narrow", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+    --focus: #5B8CFF;
+    --dock-bg: #0A0B0D;
+    --dock-fg: var(--text);
+    --sheet-bg: var(--surface);
+    --sheet-fg: var(--text);
+  }
+  html { background: #000; }
+  body { background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; }
+  .mono { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+
+  .topbar {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10;
+    width: min(100%, 480px); display: flex; align-items: center; justify-content: space-between; padding: 14px 10px 0 16px;
+  }
+  .brand img { width: 112px; height: auto; }
+  .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.28); border-radius: 0; background: rgba(0,0,0,.25); color: #fff; cursor: pointer; }
+
+  .hero { position: relative; isolation: isolate; min-height: min(100svh, 800px); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+  .hero-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; z-index: -2; }
+  .hero-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(10,11,13,.35) 0%, rgba(10,11,13,0) 40%, rgba(10,11,13,.82) 74%, var(--bg) 100%); }
+  .hero-top { padding: 78px 16px 0; }
+  .hero-top .mono { margin: 0 0 6px; color: rgba(255,255,255,.75); }
+  .giant { margin: 0; font-family: var(--giant); font-size: clamp(118px, 40vw, 188px); line-height: .84; letter-spacing: -.01em; text-transform: uppercase; }
+  .giant .outline { color: transparent; -webkit-text-stroke: 2px #fff; }
+  .hero-body { padding: 0 16px 34px; }
+  .hero-body h1 { margin: 0; font-size: 40px; line-height: 1.15; font-weight: 600; letter-spacing: .02em; }
+  .hero-body h1 em { font-style: normal; color: var(--electric-2); }
+  .lede { margin: 12px 0 0; font-size: 15px; color: #C9CDD3; }
+  .cta-row { display: flex; gap: 10px; margin-top: 20px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: space-between; gap: 14px;
+    min-height: 52px; padding: 0 18px; border: 0; border-radius: 0; cursor: pointer;
+    font-size: 16px; font-weight: 600; text-decoration: none;
+  }
+  .btn-primary { flex: 1.3; background: var(--electric); color: #fff; }
+  .btn-line { flex: 1; color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.6); }
+
+  .modules { border-top: 1px solid var(--line); margin: 0 16px; }
+  .module { display: grid; grid-template-columns: 44px 1fr 24px; align-items: center; gap: 4px 8px; padding: 18px 0; border-bottom: 1px solid var(--line); color: var(--text); text-decoration: none; }
+  .module .mono { color: var(--muted); align-self: start; padding-top: 6px; }
+  .module strong { font-size: 24px; line-height: 1.25; font-weight: 600; }
+  .module-desc { grid-column: 2; font-size: 13px; line-height: 1.6; color: var(--muted); }
+  .module svg { grid-column: 3; grid-row: 1; color: var(--electric-2); }
+  .module .todo { color: var(--muted); }
+
+  .partners { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 16px; padding: 16px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+  .partner { font-size: 14px; font-weight: 600; color: var(--text); }
+  .partner i { font-family: var(--mono); font-style: normal; font-size: 11px; letter-spacing: .08em; color: var(--muted); margin-left: 4px; }
+
+  .facilities { padding: 40px 0 128px; }
+  .section-head { padding: 0 16px; }
+  .section-head .mono { margin: 0; color: var(--orange); }
+  .section-head .giant-sm { margin: 8px 0 0; font-family: var(--giant); font-size: 64px; line-height: .9; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1.5px var(--text); }
+  .section-head h2 { margin: 6px 0 0; font-size: 26px; font-weight: 600; line-height: 1.3; }
+  .chips { position: sticky; top: 0; z-index: 5; padding: 14px 16px; margin-top: 8px; background: rgba(10, 11, 13, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 1px solid #3A3F47; border-radius: 0; background: transparent; color: var(--text); font-size: 14px; }
+  .chip .count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--electric); border-color: var(--electric); }
+  .chip[aria-pressed="true"] .count { color: #DCE6FF; }
+  .cards { list-style: none; margin: 0; padding: 4px 16px 0; }
+  .card { padding: 14px 0 22px; border-bottom: 1px solid var(--line); }
+  .card img { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; background: var(--surface); }
+  .card-cap { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--muted); }
+  .card-cap b { font-weight: 400; color: var(--electric-2); margin-right: 10px; }
+  .card-name { display: block; margin-top: 2px; font-size: 24px; font-weight: 600; line-height: 1.3; }
+  .card-note { font-size: 13px; color: var(--muted); }
+  .fineprint { margin: 20px 16px 0; padding: 0 0 0 12px; border-left: 2px solid var(--orange); font-size: 13px; line-height: 1.65; color: var(--muted); }
+
+  .dock { border-top: 1px solid var(--line); }
+  .dock-price { font-size: 12px; color: var(--muted); }
+  .dock-price b { font: 400 34px/1 var(--giant); color: var(--text); margin-right: 4px; letter-spacing: .01em; }
+  .dock .btn { min-height: 48px; }
+  .sheet { border-radius: 0; border-top: 2px solid var(--electric); }
+  .sheet h2 { margin: 0 0 6px; font-size: 22px; font-weight: 600; }
+  .contact { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .contact small { font-family: var(--mono); }
+  .tel { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; background: var(--electric); color: #fff; font-family: var(--mono); font-size: 14px; text-decoration: none; }
+  .btn-copy { width: 100%; min-height: 50px; border: 1px solid #4A505A; background: transparent; color: var(--text); cursor: pointer; }
+</style>
+</head>
+<body>
+<a class="skip" href="#facilities">跳到场地设施</a>
+<p class="visually-hidden" data-live aria-live="polite"></p>
+
+<header class="topbar">
+  <a class="brand" href="#top" aria-label="丛动体育首页"><img src="../media/brand/logo-wordmark.png" width="480" height="184" alt="丛动体育 CONGDONG SPORTS"></a>
+  <button class="icon-btn" type="button" data-menu aria-label="打开菜单">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+  </button>
+</header>
+
+<main id="top">
+  <section class="hero" data-hero aria-labelledby="hero-title">
+    <img class="hero-media" src="../media/img/hero-066-9x16.jpg" width="810" height="1440" alt="夜晚灯光下的怀柔基地足球场">
+    <div class="hero-shade"></div>
+    <div class="hero-top">
+      <p class="mono">Beijing · Huairou / Miyun</p>
+      <p class="giant" aria-hidden="true">Cong<br><span class="outline">Dong</span></p>
+    </div>
+    <div class="hero-body">
+      <h1 id="hero-title">两大基地<br><em>一站集训</em></h1>
+      <p class="lede">篮球、足球、网球、羽毛球、乒乓球、健身<br>集训 / 体育生升学规划</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#consult" data-open-sheet>咨询集训<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-line" href="#study">升学规划</a>
+      </div>
+    </div>
+  </section>
+
+  <nav class="modules" aria-label="两大业务">
+    <a class="module" href="#facilities">
+      <span class="mono">01</span>
+      <strong>集训</strong>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <span class="module-desc">学校、体育培训机构集训拓展，也可承接团建与交流活动</span>
+    </a>
+    <a class="module" id="study" href="#study">
+      <span class="mono">02</span>
+      <strong>体育生升学规划</strong>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <span class="module-desc">篮球项目：小升初（进入篮球传统校）、初升高</span>
+    </a>
+  </nav>
+
+  <section class="partners" aria-label="官方合作伙伴">
+    <span class="mono">Official partners</span>
+    <span class="partner">美凯<i>MERRY</i></span>
+    <span class="partner">金陵体育<i>JINLING SPORTS</i></span>
+  </section>
+
+  <section class="facilities" id="facilities" aria-labelledby="fac-title">
+    <div class="section-head">
+      <p class="mono">03 / Facilities</p>
+      <p class="giant-sm" aria-hidden="true">Facilities</p>
+      <h2 id="fac-title">场地设施</h2>
+    </div>
+    <div class="chips" data-chips data-show-count role="group" aria-label="按项目筛选"></div>
+    <ul class="cards" data-facility-list></ul>
+    <p class="fineprint">同期超过两支集训队伍时，园区统一调配场地时间，保证每支队伍每天篮球馆使用不少于 4 小时。</p>
+  </section>
+</main>
+
+<div class="dock" data-dock aria-hidden="true">
+  <p class="dock-price"><b>¥380</b>/人/天起</p>
+  <a class="btn btn-primary" href="#consult" data-open-sheet>咨询集训<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+</div>
+
+<dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+  <form method="dialog" class="sheet-inner">
+    <div class="sheet-grabber" aria-hidden="true"></div>
+    <h2 id="sheet-title">预约咨询</h2>
+    <div class="contact">
+      <div class="contact-text">
+        <b>贺老师</b>
+        <small>集训、篮球升学规划都可以咨询</small>
+        <a class="tel" href="tel:18601395386">186 0139 5386</a>
+      </div>
+      <figure class="qr">
+        <img src="../media/brand/wechat-qr.png" width="201" height="202" alt="丛动体育官方微信二维码">
+        <figcaption>微信里长按识别</figcaption>
+      </figure>
+    </div>
+    <button class="btn-copy" type="button" data-copy-template>复制咨询模板，粘贴到微信</button>
+    <p class="copy-status" data-copy-status role="status"></p>
+    <button class="sheet-close" value="close" aria-label="关闭">×</button>
+  </form>
+</dialog>
+
+<script>
+  window.renderFacility = (f, i) => `
+    <li class="card" data-sport="${f.sport}">
+      <img src="../media/img/${f.night || f.img}-800.jpg" width="800" height="500" alt="${f.base}${f.name}" ${i > 0 ? 'loading="lazy"' : ""}>
+      <span class="card-cap mono"><span><b>${String(i + 1).padStart(2, "0")}</b>${f.en}</span><span>${f.base}</span></span>
+      <span class="card-name">${f.name}</span>
+      ${f.note ? `<span class="card-note">${f.note}</span>` : ""}
+    </li>`;
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

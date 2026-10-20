@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F4EE">
+<title>方向 B · 清晨草场｜丛动体育</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root {
+    --paper: #F6F4EE;
+    --card: #FFFFFF;
+    --ink: #10233F;
+    --muted: #56657A;
+    --line: #E5E1D6;
+    --turf: #1E9E5A;
+    --turf-ink: #157A45;
+    --turf-soft: #E3F2E8;
+    --orange: #FF6B2C;
+    --num: "Outfit", -apple-system, "Helvetica Neue", sans-serif;
+    --focus: #157A45;
+    --dock-bg: #fff;
+    --dock-fg: var(--ink);
+    --sheet-bg: var(--paper);
+    --sheet-fg: var(--ink);
+  }
+  html { background: #E9E6DD; }
+  body { background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.7; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px 10px 16px; background: rgba(246, 244, 238, .92);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  .brand { margin-right: auto; }
+  .brand img { width: 108px; height: auto; }
+  .pill-sm {
+    min-height: 40px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer;
+    background: var(--ink); color: #fff; font-size: 14px; font-weight: 600; text-decoration: none;
+    display: inline-flex; align-items: center;
+  }
+  .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; }
+
+  .hero { padding: 14px 16px 0; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; margin: 0;
+    padding: 5px 12px; border-radius: 999px; background: var(--turf-soft);
+    font-size: 13px; font-weight: 600; color: var(--turf-ink);
+  }
+  .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--turf); }
+  .hero h1 { margin: 14px 0 0; font-size: 40px; line-height: 1.18; font-weight: 600; letter-spacing: .01em; }
+  .lede { margin: 12px 0 0; font-size: 16px; color: var(--muted); }
+  .cta-row { display: flex; gap: 10px; margin-top: 20px; }
+  .btn {
+    flex: 1; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 999px; border: 0; cursor: pointer; font-size: 16px; font-weight: 600; text-decoration: none;
+  }
+  .btn-primary { background: var(--orange); color: var(--ink); }
+  .btn-secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .hero-photo { position: relative; margin: 22px 0 0; border-radius: 28px; overflow: hidden; aspect-ratio: 4 / 5; background: #cfe3d2; }
+  .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .price-badge {
+    position: absolute; left: 14px; bottom: 14px; display: flex; align-items: baseline; gap: 4px;
+    padding: 10px 14px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgba(16, 35, 63, .18);
+    font-size: 13px; color: var(--muted);
+  }
+  .price-badge b { font: 800 30px/1 var(--num); color: var(--ink); }
+  .photo-label {
+    position: absolute; right: 14px; top: 14px; padding: 4px 10px; border-radius: 999px;
+    background: rgba(16, 35, 63, .55); color: #fff; font-size: 12px;
+  }
+
+  .modules { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 18px 16px 0; }
+  .module {
+    display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 22px;
+    background: var(--card); color: var(--ink); text-decoration: none; box-shadow: 0 1px 0 var(--line);
+  }
+  .module-icon { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--turf-soft); color: var(--turf-ink); }
+  .module:nth-child(2) .module-icon { background: #FFE7DC; color: #B8431A; }
+  .module strong { font-size: 18px; line-height: 1.3; font-weight: 600; }
+  .module span:last-child { font-size: 13px; line-height: 1.55; color: var(--muted); }
+
+  .partners {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 18px 16px 0;
+    padding: 12px 16px; border-radius: 18px; background: var(--card); font-size: 13px; color: var(--muted);
+  }
+  .partner { font-weight: 600; color: var(--ink); }
+  .partner i { font: 600 12px/1 var(--num); font-style: normal; letter-spacing: .04em; margin-left: 3px; color: var(--muted); }
+
+  .facilities { padding: 36px 0 128px; }
+  .section-head { padding: 0 16px; display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+  .section-head h2 { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 600; }
+  .section-head p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+  .chips { padding: 14px 16px 4px; }
+  .chip {
+    min-height: 40px; padding: 0 16px; border-radius: 999px; border: 0;
+    background: var(--card); color: var(--ink); font-size: 14px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .chip[aria-pressed="true"] { background: var(--turf-ink); color: #fff; box-shadow: none; }
+  .cards {
+    list-style: none; margin: 0; padding: 10px 16px 6px; display: flex; gap: 12px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 16px; scrollbar-width: none;
+  }
+  .cards::-webkit-scrollbar { display: none; }
+  .card { flex: 0 0 74%; scroll-snap-align: start; border-radius: 24px; overflow: hidden; background: var(--card); box-shadow: 0 1px 0 var(--line); }
+  .card img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+  .card-text { display: block; padding: 12px 16px 16px; }
+  .card-name { display: block; font-size: 18px; font-weight: 600; line-height: 1.35; }
+  .card-meta { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); }
+  .swipe-hint { margin: 4px 16px 0; font-size: 12px; color: var(--muted); }
+  .fineprint {
+    margin: 16px 16px 0; padding: 14px 16px; border-radius: 18px; background: var(--turf-soft);
+    font-size: 13px; line-height: 1.65; color: #24533A;
+  }
+
+  .dock {
+    bottom: 10px; width: min(calc(100% - 24px), 456px); border-radius: 999px;
+    padding: 8px 8px 8px 20px; box-shadow: 0 12px 32px rgba(16, 35, 63, .2);
+  }
+  .dock.is-visible { transform: translate(-50%, 0); }
+  .dock-price { font-size: 13px; color: var(--muted); }
+  .dock-price b { font: 800 26px/1 var(--num); color: var(--ink); margin-right: 2px; }
+  .dock .btn { flex: none; min-height: 48px; padding: 0 22px; }
+  .sheet { border-radius: 26px 26px 0 0; }
+  .sheet h2 { margin: 0 0 6px; font-size: 22px; font-weight: 600; }
+  .contact { padding: 14px 16px; border-radius: 18px; background: #fff; }
+  .tel {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px;
+    background: var(--turf-ink); color: #fff; font-weight: 600; text-decoration: none; font-variant-numeric: tabular-nums;
+  }
+  .btn-copy {
+    width: 100%; min-height: 50px; border: 0; border-radius: 999px; cursor: pointer;
+    background: var(--ink); color: #fff; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#facilities">跳到场地设施</a>
+<p class="visually-hidden" data-live aria-live="polite"></p>
+
+<header class="topbar">
+  <a class="brand" href="#top" aria-label="丛动体育首页"><img src="../media/brand/logo-wordmark.png" width="480" height="184" alt="丛动体育 CONGDONG SPORTS"></a>
+  <a class="pill-sm" href="#consult" data-open-sheet>咨询</a>
+  <button class="icon-btn" type="button" data-menu aria-label="打开菜单">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/></svg>
+  </button>
+</header>
+
+<main id="top">
+  <section class="hero" data-hero aria-labelledby="hero-title">
+    <p class="eyebrow">北京怀柔基地 · 密云营地</p>
+    <h1 id="hero-title">住在场边，<br>专心集训</h1>
+    <p class="lede">住宿、自助三餐、园区内场地使用，按人按天一价全含。</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#consult" data-open-sheet>咨询集训</a>
+      <a class="btn btn-secondary" href="#study">升学规划</a>
+    </div>
+    <figure class="hero-photo">
+      <img src="../media/img/hero-084-4x5.jpg" width="840" height="1050" alt="怀柔基地足球场，阳光下的草坪与球门">
+      <span class="photo-label">怀柔基地 · 足球场</span>
+      <figcaption class="price-badge"><b>380</b>元/人/天起</figcaption>
+    </figure>
+  </section>
+
+  <nav class="modules" aria-label="两大业务">
+    <a class="module" href="#facilities">
+      <span class="module-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></span>
+      <strong>集训</strong>
+      <span>学校、体育培训机构集训拓展，也可承接团建与交流活动</span>
+    </a>
+    <a class="module" id="study" href="#study">
+      <span class="module-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/></svg></span>
+      <strong>体育生升学规划</strong>
+      <span>篮球项目：小升初（进入篮球传统校）、初升高</span>
+    </a>
+  </nav>
+
+  <section class="partners" aria-label="官方合作伙伴">
+    <span>官方合作伙伴</span>
+    <span class="partner">美凯<i>MERRY</i></span>
+    <span class="partner">金陵体育<i>JINLING SPORTS</i></span>
+  </section>
+
+  <section class="facilities" id="facilities" aria-labelledby="fac-title">
+    <div class="section-head">
+      <div>
+        <h2 id="fac-title">场地设施</h2>
+        <p>两个基地的运动场地，左右滑动查看</p>
+      </div>
+    </div>
+    <div class="chips" data-chips role="group" aria-label="按项目筛选"></div>
+    <ul class="cards" data-facility-list></ul>
+    <p class="fineprint">同期超过两支集训队伍时，园区统一调配场地时间，保证每支队伍每天篮球馆使用不少于 4 小时。</p>
+  </section>
+</main>
+
+<div class="dock" data-dock aria-hidden="true">
+  <p class="dock-price"><b>380</b>元/人/天起</p>
+  <a class="btn btn-primary" href="#consult" data-open-sheet>咨询集训</a>
+</div>
+
+<dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+  <form method="dialog" class="sheet-inner">
+    <div class="sheet-grabber" aria-hidden="true"></div>
+    <h2 id="sheet-title">联系我们</h2>
+    <div class="contact">
+      <div class="contact-text">
+        <b>贺老师</b>
+        <small>集训、篮球升学规划都可以咨询</small>
+        <a class="tel" href="tel:18601395386">186 0139 5386</a>
+      </div>
+      <figure class="qr">
+        <img src="../media/brand/wechat-qr.png" width="201" height="202" alt="丛动体育官方微信二维码">
+        <figcaption>微信里长按识别</figcaption>
+      </figure>
+    </div>
+    <button class="btn-copy" type="button" data-copy-template>复制咨询模板，粘贴到微信</button>
+    <p class="copy-status" data-copy-status role="status"></p>
+    <button class="sheet-close" value="close" aria-label="关闭">×</button>
+  </form>
+</dialog>
+
+<script>
+  window.renderFacility = (f, i) => `
+    <li class="card" data-sport="${f.sport}">
+      <img src="../media/img/${f.img}-800.jpg" width="${f.w}" height="${f.h}" alt="${f.base}${f.name}" ${i > 1 ? 'loading="lazy"' : ""}>
+      <span class="card-text">
+        <span class="card-name">${f.name}${f.note ? ` · <small>${f.note}</small>` : ""}</span>
+        <span class="card-meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>${f.base}</span>
+      </span>
+    </li>`;
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

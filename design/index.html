@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>视觉方向 A / B / C｜丛动体育官网</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root {
+    --bg: #ECEEF2; --card: #FFFFFF; --ink: #151922; --muted: #596273; --line: #DCE0E7;
+    --a: #1E56E6; --b: #157A45; --c: #0A0B0D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--a); }
+  code { font: 12px/1 ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 0 24px; }
+
+  .page-head { display: flex; gap: 24px; align-items: center; padding: 32px 0 20px; }
+  .page-head img { width: 150px; height: auto; flex: none; }
+  .page-head .eyebrow { margin: 0; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+  .page-head h1 { margin: 2px 0 6px; font-size: 30px; line-height: 1.3; }
+  .page-head p { margin: 0; color: var(--muted); max-width: 62em; }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+  .jump a { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--card); color: var(--ink); text-decoration: none; font-size: 13px; }
+
+  .context { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .context > div { background: var(--card); border-radius: 16px; padding: 16px 20px; }
+  .context h2 { margin: 0 0 6px; font-size: 15px; }
+  .context ul { margin: 0; padding-left: 1.2em; color: var(--muted); }
+
+  .directions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+  @media (max-width: 1180px) { .directions { grid-template-columns: minmax(0, 560px); justify-content: center; } }
+  .dir { background: var(--card); border-radius: 22px; padding: 20px; scroll-margin-top: 16px; }
+  .dir-head { display: flex; align-items: center; gap: 14px; }
+  .dir-letter {
+    width: 52px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 14px;
+    background: var(--accent); color: #fff; font: 800 30px/1 "Outfit", -apple-system, sans-serif;
+  }
+  .dir-head h2 { margin: 0; font-size: 22px; line-height: 1.2; }
+  .dir-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+  .phone-wrap { --s: 1; position: relative; height: calc(864px * var(--s)); margin: 18px 0 10px; }
+  .phone {
+    position: absolute; left: 50%; top: 0; width: 410px; height: 864px; padding: 10px;
+    transform: translateX(-50%) scale(var(--s)); transform-origin: top center;
+    border-radius: 50px; background: #0E1015; box-shadow: 0 30px 60px -28px rgba(10, 14, 25, .55), inset 0 0 0 2px #2A2E36;
+  }
+  .phone iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 40px; background: #fff; }
+  .open { margin: 0 0 14px; text-align: center; font-size: 14px; }
+
+  .spec { margin: 0; }
+  .spec dt { margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+  .spec dd { margin: 4px 0 0; }
+  .spec dd p { margin: 6px 0 0; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .swatches li { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; }
+  .swatches i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+  .specimen { margin: 6px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 28px; line-height: 1.2; }
+  .reflist { margin: 6px 0 0; padding-left: 1.1em; }
+  .reflist li { margin: 4px 0; }
+
+  .refs, .questions { margin-top: 28px; background: var(--card); border-radius: 22px; padding: 22px 24px; }
+  .refs h2, .questions h2 { margin: 0 0 4px; font-size: 22px; }
+  .refs > p, .questions > p { margin: 0 0 14px; color: var(--muted); }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-top: 1px solid var(--line); }
+  th { font-size: 13px; color: var(--muted); font-weight: 700; border-top: 0; }
+  td:first-child { white-space: nowrap; }
+  .tagset span { display: inline-block; margin: 0 4px 2px 0; padding: 0 8px; border-radius: 999px; background: #EEF1F6; font-size: 12px; }
+  .unused { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+  .questions ol { margin: 0; padding-left: 1.3em; }
+  .questions li { margin: 10px 0; }
+  .questions li b { display: block; }
+  .questions li span { color: var(--muted); }
+  footer { padding: 24px 0 48px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <img src="../media/brand/logo-lockup.png" width="480" height="265" alt="丛动体育 CONGDONG SPORTS">
+    <div>
+      <p class="eyebrow">丛动体育官网 · 视觉方向确认</p>
+      <h1>三个视觉方向：请选一个，我再开始做首页</h1>
+      <p>每个手机框里都是真实的 390×844 移动端页面：可以上下滑动，点运动项目筛选场地，点「咨询」会弹出底部联系面板。也可以点「单独打开」，用手机或浏览器的手机模式查看。三个方向用的是同一套事实和照片，只换视觉。</p>
+      <ul class="jump">
+        <li><a href="#dir-a">A 赛场蓝</a></li>
+        <li><a href="#dir-b">B 清晨草场</a></li>
+        <li><a href="#dir-c">C 夜场霓虹</a></li>
+        <li><a href="#refs">Mobbin 参考</a></li>
+        <li><a href="#questions">下一步</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="context" aria-label="前提">
+    <div>
+      <h2>已确认</h2>
+      <ul>
+        <li>两大业务：<b>集训</b>（怀柔基地、密云营地）和<b>体育生升学规划</b>（篮球项目：小升初进入篮球传统校、初升高）。</li>
+        <li>全站只放一个联系人：贺老师，电话加官方微信二维码。</li>
+        <li>价格只写「380 元/人/天起」，不公开完整价格表。</li>
+      </ul>
+    </div>
+    <div>
+      <h2>内容原则</h2>
+      <ul>
+        <li>地址、场地、价格、电话、合作伙伴都来自你提供的海报和价格表，照片都是丛动实景，没有编造内容。</li>
+        <li>海报里的「国内最顶级」属于广告法禁止的绝对化用语，官网不使用。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="directions" aria-label="三个视觉方向">
+    <article class="dir" id="dir-a" style="--accent: var(--a)">
+      <div class="dir-head">
+        <span class="dir-letter">A</span>
+        <div><h2>赛场蓝</h2><p>比赛日海报感，直接延续现有海报和 logo</p></div>
+      </div>
+      <div class="phone-wrap"><div class="phone"><iframe src="a.html" title="方向 A 赛场蓝：手机预览"></iframe></div></div>
+      <p class="open"><a href="a.html" target="_blank" rel="noopener">单独打开 A ↗</a></p>
+      <dl class="spec">
+        <dt>色彩</dt>
+        <dd>
+          <ul class="swatches">
+            <li><i style="background:#0B1F4D"></i>海军蓝 <code>#0B1F4D</code></li>
+            <li><i style="background:#1E56E6"></i>电光蓝 <code>#1E56E6</code></li>
+            <li><i style="background:linear-gradient(90deg,#FF5A1F,#FFB020)"></i>橙红→琥珀 <code>#FF5A1F</code></li>
+            <li><i style="background:#F2F5FB"></i>浅蓝白 <code>#F2F5FB</code></li>
+          </ul>
+          <p>颜色都取自 logo 和海报。橙色按钮用深蓝字（对比度 5.7:1），比白字更清楚。</p>
+        </dd>
+        <dt>字体</dt>
+        <dd>
+          <p class="specimen" style="background:#0B1F4D;color:#fff;font-family:'Smiley Sans Oblique',sans-serif">丛<span style="font:italic 800 .62em 'Barlow Condensed';color:#FFB020">xīn</span>而动 · 场地设施</p>
+          <p>标题用开源字体「得意黑」：斜、窄，有冲劲。英文和数字用 Barlow Condensed 粗斜体，正文用手机系统字体。</p>
+        </dd>
+        <dt>图片</dt>
+        <dd>首屏是从怀柔宣传片里剪出的 10 秒竖版循环：丛动篮球 → 篮球馆 → 足球场 → 网球场，没有声音，可以暂停；系统开启「减少动态效果」时只显示静态图。</dd>
+        <dt>整体感觉</dt>
+        <dd>像赛前海报和比赛日节目单，和现有物料最连贯。斜切按钮、海报斜纹和橙色标签都来自原海报。</dd>
+        <dt>Mobbin 参考</dt>
+        <dd><ul class="reflist">
+          <li><a href="https://mobbin.com/sites/sections/abf8940e-4964-4058-8cc8-4ab89f147c70" target="_blank" rel="noopener">The Performance Lab · 首屏</a>：全屏动态画面、左下大标题、首屏下方紧接合作伙伴条</li>
+          <li><a href="https://mobbin.com/screens/81b16e19-44bd-47d0-9541-ad1fd9746fc5" target="_blank" rel="noopener">Nike Training Club</a>：照片上压粗体大字，按钮放在拇指能点到的位置</li>
+          <li><a href="https://mobbin.com/sites/sections/29d6b6a5-d217-4c82-9820-db16fae3e4ad" target="_blank" rel="noopener">Samara · 照片卡</a>：竖版照片卡，文字压在图上</li>
+          <li><a href="https://mobbin.com/screens/cc67d898-c230-4017-8740-1da79a610e8c" target="_blank" rel="noopener">Fixtured · 运动项目筛选</a>：按运动项目切换的筛选条</li>
+        </ul></dd>
+      </dl>
+    </article>
+
+    <article class="dir" id="dir-b" style="--accent: var(--b)">
+      <div class="dir-head">
+        <span class="dir-letter">B</span>
+        <div><h2>清晨草场</h2><p>明亮、亲切的训练营，家长和老师读起来最轻松</p></div>
+      </div>
+      <div class="phone-wrap"><div class="phone"><iframe src="b.html" title="方向 B 清晨草场：手机预览"></iframe></div></div>
+      <p class="open"><a href="b.html" target="_blank" rel="noopener">单独打开 B ↗</a></p>
+      <dl class="spec">
+        <dt>色彩</dt>
+        <dd>
+          <ul class="swatches">
+            <li><i style="background:#F6F4EE"></i>米白 <code>#F6F4EE</code></li>
+            <li><i style="background:#10233F"></i>海军蓝 <code>#10233F</code></li>
+            <li><i style="background:#157A45"></i>草绿 <code>#157A45</code></li>
+            <li><i style="background:#FF6B2C"></i>橙 <code>#FF6B2C</code></li>
+          </ul>
+          <p>米白底配海军蓝字（14:1）。草绿用于选中状态（白字 5.4:1），橙色只用在主按钮上。</p>
+        </dd>
+        <dt>字体</dt>
+        <dd>
+          <p class="specimen" style="background:#F6F4EE;color:#10233F;font-weight:600">住在场边，专心集训 <span style="font:800 1em 'Outfit'">380</span></p>
+          <p>标题用系统苹方 Semibold，直体、字距略松。数字和英文用 Outfit（圆润的几何无衬线），比较友好。</p>
+        </dd>
+        <dt>图片</dt>
+        <dd>白天户外照片：晨光里的足球场、密云小院、推杆果岭。照片做成大圆角卡片，不铺满全屏。</dd>
+        <dt>整体感觉</dt>
+        <dd>像营地或夏令营 App，信息最清楚，也最「好说话」。场地卡片可以横向滑动，咨询条是悬浮的胶囊。</dd>
+        <dt>Mobbin 参考</dt>
+        <dd><ul class="reflist">
+          <li><a href="https://mobbin.com/sites/sections/e4d1beba-4608-45ad-8b32-e77d04ad88c9" target="_blank" rel="noopener">Patreon · 两个项目入口</a>：两张并排卡片，对应集训和升学规划</li>
+          <li><a href="https://mobbin.com/screens/a616fbd5-1f61-4ad8-81bd-d15f69f7e831" target="_blank" rel="noopener">Strava · Groups</a>：筛选条加照片卡片的横向浏览</li>
+          <li><a href="https://mobbin.com/sites/sections/3cfe935a-4543-4397-b4f5-82128a07251e" target="_blank" rel="noopener">KOBU · 住宿卡片</a>：卡片上标名称和地点，之后的房型卡标 ¥/人/天</li>
+          <li><a href="https://mobbin.com/screens/969dc85a-fd3d-49ca-bc1b-11db625af962" target="_blank" rel="noopener">Insight Timer · 场地页</a>：底部常驻「起价 + 预订」条</li>
+        </ul></dd>
+      </dl>
+    </article>
+
+    <article class="dir" id="dir-c" style="--accent: var(--c)">
+      <div class="dir-head">
+        <span class="dir-letter">C</span>
+        <div><h2>夜场霓虹</h2><p>编辑感和态度，最像运动品牌的广告大片</p></div>
+      </div>
+      <div class="phone-wrap"><div class="phone"><iframe src="c.html" title="方向 C 夜场霓虹：手机预览"></iframe></div></div>
+      <p class="open"><a href="c.html" target="_blank" rel="noopener">单独打开 C ↗</a></p>
+      <dl class="spec">
+        <dt>色彩</dt>
+        <dd>
+          <ul class="swatches">
+            <li><i style="background:#0A0B0D"></i>夜黑 <code>#0A0B0D</code></li>
+            <li><i style="background:#2A62F5"></i>电光蓝 <code>#2A62F5</code></li>
+            <li><i style="background:#FF5A1F"></i>橙红 <code>#FF5A1F</code></li>
+            <li><i style="background:#9AA0A9"></i>灰 <code>#9AA0A9</code></li>
+          </ul>
+          <p>近黑底配白字。按钮用电光蓝（白字 5.0:1），辅助文字用灰（7.5:1）。橙红只做很少量的点缀。</p>
+        </dd>
+        <dt>字体</dt>
+        <dd>
+          <p class="specimen" style="background:#0A0B0D;color:#F2F3F5"><span style="font:400 1.3em 'Anton';letter-spacing:.01em">CONG DONG</span> <b style="font-weight:600">两大基地</b></p>
+          <p>超大英文用 Anton（窄体粗无衬线）做视觉主体，中文标题用苹方 Semibold，规格标签用等宽字体。</p>
+        </dd>
+        <dt>图片</dt>
+        <dd>夜间灯光球场、夜里的笼式足球和高尔夫练习网，全宽大图。夜景照片不多，后面的页面要和日景混用。</dd>
+        <dt>整体感觉</dt>
+        <dd>最酷、最有态度，对青少年运动员本人最有吸引力。但学校和家长看重的「靠谱感」比 A、B 弱一些。</dd>
+        <dt>Mobbin 参考</dt>
+        <dd><ul class="reflist">
+          <li><a href="https://mobbin.com/sites/sections/8da262f1-ff5b-4152-a27a-85d99807d5f3" target="_blank" rel="noopener">The Performance Lab · 咨询段</a>：黑底超大字加「预约咨询」，以后也适合升学规划</li>
+          <li><a href="https://mobbin.com/sites/sections/d494624f-4b51-450a-aa1f-9afbc5232400" target="_blank" rel="noopener">Nike After Dark Tour</a>：黑底上叠放的巨型字和数字</li>
+          <li><a href="https://mobbin.com/sites/sections/629aae31-4a94-46df-a97f-3180a6ae22e0" target="_blank" rel="noopener">Trawelt · 编号章节</a>：用大编号排栏目（01 集训 / 02 升学规划）</li>
+          <li><a href="https://mobbin.com/screens/b6b6e5c6-2d84-4b73-bd10-9e734fca66db" target="_blank" rel="noopener">Formula 1 · 筛选条</a>：图片下方的方形筛选标签</li>
+        </ul></dd>
+      </dl>
+    </article>
+  </section>
+
+  <section class="refs" id="refs">
+    <h2>Mobbin 参考与对应的设计决定</h2>
+    <p>以下都是本项目里用官方 Mobbin MCP 实际检索并看过截图的案例。我借鉴的是布局和交互模式，视觉没有照搬。</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>参考</th><th>看到了什么</th><th>用在丛动官网哪里</th><th>方向</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://mobbin.com/sites/sections/abf8940e-4964-4058-8cc8-4ab89f147c70" target="_blank" rel="noopener">The Performance Lab · 首屏</a></td><td>全屏运动画面，左下超大标题，橙色按钮，下面紧跟合作伙伴 logo 条</td><td>首屏结构；首屏下方放美凯、金陵体育合作伙伴条</td><td class="tagset"><span>A</span><span>C</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/eca587d3-df1d-45ec-920b-9bbb15fd03ad" target="_blank" rel="noopener">The Performance Lab · 首屏变体</a></td><td>同一品牌的另一版首屏，动态图加大标题</td><td>确认「动态画面 + 底部大标题」在运动品牌里的通用做法</td><td class="tagset"><span>A</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/8da262f1-ff5b-4152-a27a-85d99807d5f3" target="_blank" rel="noopener">The Performance Lab · 咨询</a></td><td>「每个运动员都不同」：先咨询，再定制方案</td><td>体育生升学规划用「先咨询」做主入口；C 的超大字段落</td><td class="tagset"><span>C</span><span>全站</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/81b16e19-44bd-47d0-9541-ad1fd9746fc5" target="_blank" rel="noopener">Nike Training Club（iOS）</a></td><td>全屏照片上的窄体大写标题和胶囊按钮</td><td>首屏标题的字号和排法</td><td class="tagset"><span>A</span><span>C</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/940e830e-d7b9-4c97-b122-fd6c24d037be" target="_blank" rel="noopener">Strava（iOS）</a></td><td>底部渐变压暗，主按钮放在拇指可及区</td><td>首屏渐变遮罩，按钮放在屏幕下半部分</td><td class="tagset"><span>A</span><span>C</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/e4d1beba-4608-45ad-8b32-e77d04ad88c9" target="_blank" rel="noopener">Patreon · Creator programs</a></td><td>两个项目并排，各带图片、说明和按钮</td><td>「集训 / 体育生升学规划」两张业务入口卡</td><td class="tagset"><span>全部</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/8a626c42-4c85-40dd-912f-feb1315d5125" target="_blank" rel="noopener">Udemy · 个人 / 机构</a></td><td>按受众分开的两张卡，标明「适合谁」</td><td>业务卡写清楚服务对象：学校和机构 vs 体育生和家长</td><td class="tagset"><span>全部</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/a6819867-6420-40ef-bf6e-d99e989fa112" target="_blank" rel="noopener">Voiceflow · 两类方案</a></td><td>两张方案卡，下面各有「包含」清单</td><td>之后的集训页列出「费用包含：住宿、自助三餐、园区场地」</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/cc67d898-c230-4017-8740-1da79a610e8c" target="_blank" rel="noopener">Fixtured（iOS）</a></td><td>全部 / 篮球 / 足球 等运动项目筛选</td><td>场地设施的运动项目筛选条</td><td class="tagset"><span>全部</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/a616fbd5-1f61-4ad8-81bd-d15f69f7e831" target="_blank" rel="noopener">Strava Groups（iOS）</a></td><td>运动类型筛选加照片卡</td><td>B 的横滑场地卡</td><td class="tagset"><span>B</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/b6b6e5c6-2d84-4b73-bd10-9e734fca66db" target="_blank" rel="noopener">Formula 1（iOS）</a></td><td>图片下方的筛选标签</td><td>筛选条滚动时吸顶</td><td class="tagset"><span>A</span><span>C</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/29d6b6a5-d217-4c82-9820-db16fae3e4ad" target="_blank" rel="noopener">Samara · 照片卡</a></td><td>竖版大照片卡，文字压在图上</td><td>A 的场地卡</td><td class="tagset"><span>A</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/3cfe935a-4543-4397-b4f5-82128a07251e" target="_blank" rel="noopener">KOBU · 住宿卡片</a></td><td>名称、地点和「From $X/nt」</td><td>场地卡标基地；房型卡标「元/人/天」</td><td class="tagset"><span>B</span><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/cdd19861-d1ea-4e64-9f06-80e2007509f1" target="_blank" rel="noopener">KOBU · Select Your Stay</a></td><td>房型价格列表，加深色「包含」面板和小字说明</td><td>「费用包含」说明：住宿、自助三餐、园区场地（完整价格表按你的要求不公开）</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/0ea724e9-b21f-46c1-8ca1-08acdf143afb" target="_blank" rel="noopener">1Password · 定价切换</a></td><td>用标签切换不同方案</td><td>暂不采用：价格只写「380 起」，不需要切换价格表</td><td class="tagset"><span>—</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/f53bcfb9-579b-43ad-8923-89e66973e8fe" target="_blank" rel="noopener">Samara · 地点</a></td><td>地点名、地址、时间、「预约参观」和照片</td><td>两个基地的卡片：位置、交通、联系人</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/1046fdf6-61e6-4987-be32-89316b8e2515" target="_blank" rel="noopener">Pentagram · 多地点</a></td><td>多个办公地点并排</td><td>怀柔、密云两个基地并列展示</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/969dc85a-fd3d-49ca-bc1b-11db625af962" target="_blank" rel="noopener">Insight Timer · 场地（iOS）</a></td><td>底部常驻「From $950 · Reserve now」</td><td>底部咨询条：「380 元/人/天起 · 咨询」</td><td class="tagset"><span>全部</span></td></tr>
+          <tr><td><a href="https://mobbin.com/screens/64198080-a871-4db1-81b0-a6f674a1ece8" target="_blank" rel="noopener">Viator（iOS）</a></td><td>价格和预订按钮固定在底部</td><td>底部咨询条在首屏之后才出现</td><td class="tagset"><span>全部</span></td></tr>
+          <tr><td><a href="https://mobbin.com/flows/2e9198cc-754e-42b6-a2d9-fb6f191725f4" target="_blank" rel="noopener">Airbnb · 联系房东（流程）</a></td><td>预填好的消息，一步发出</td><td>咨询面板：贺老师的电话和微信二维码，一键复制咨询模板粘贴到微信</td><td class="tagset"><span>全部</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/d494624f-4b51-450a-aa1f-9afbc5232400" target="_blank" rel="noopener">Nike After Dark Tour</a></td><td>黑底上的巨型数字</td><td>C 的视觉主体；之后的数字条只放真实数据（2 个基地、篮球馆每天 ≥4 小时等）</td><td class="tagset"><span>C</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/e3041a95-7fa0-41ce-b0dd-be91495d13c3" target="_blank" rel="noopener">Kajabi · 数据条</a></td><td>品牌色底的数据条</td><td>A、B 版本的数字条</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/9014405b-dcc4-44ca-bc3a-c725a0dbb86a" target="_blank" rel="noopener">Hims · How it works</a></td><td>四步服务流程，一行排开</td><td>体育生升学规划的服务流程（等你提供真实流程）</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/fd4a8ae0-654b-4887-842f-120212774d02" target="_blank" rel="noopener">Biograph · How it works</a></td><td>三步流程，每步配一张大照片</td><td>升学规划流程的另一种排法（配训练实景）</td><td class="tagset"><span>后续页面</span></td></tr>
+          <tr><td><a href="https://mobbin.com/sites/sections/629aae31-4a94-46df-a97f-3180a6ae22e0" target="_blank" rel="noopener">Trawelt · 大编号</a></td><td>超大 01 / 02 编号的服务分段</td><td>C 的编号栏目</td><td class="tagset"><span>C</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="unused">也检索过但没有采用的：ClassPass、VanMoof、Apollo、Eventbrite、Framer、Squarespace、Webflow、Homerun、Shade、Speakeasy、Sprig、Assembly、Pangram、Instrument、HubSpot、Upwork、TravelPerk、DICE、FotMob、Riot、Particle、Robot.com、Mailchimp、Spade、Fluz、Calendly、Navan、Descript、Superpower、Function、Maxima Therapy、Complex Law、Kastle 等。原因是和运动场地或咨询类业务关系较弱，或者桌面端特征太强。</p>
+  </section>
+
+  <section class="questions" id="questions">
+    <h2>下一步：请选择方向</h2>
+    <p>在终端里回复 A、B 或 C 就行；也可以组合，比如「A 的首屏 + B 的卡片」。选定后我先做首页给你看。</p>
+  </section>
+
+  <footer>
+    字体：得意黑 Smiley Sans、Barlow Condensed、Anton、Outfit，都是 SIL OFL 开源授权，已经放在项目里本地加载，不依赖 Google Fonts。正文用设备自带字体（苹方、鸿蒙、MiSans、微软雅黑等）。
+  </footer>
+</div>
+
+<script>
+  // scale the 410px phone frames down to fit narrow columns
+  const fit = () => document.querySelectorAll(".phone-wrap").forEach((wrap) => {
+    wrap.style.setProperty("--s", Math.min(1, wrap.clientWidth / 410).toFixed(3));
+  });
+  addEventListener("resize", fit);
+  fit();
+</script>
+</body>
+</html>
