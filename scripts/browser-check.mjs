@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Drives headless Chrome over the DevTools protocol (Node's built-in WebSocket, no dependencies).
 //
-//   node scripts/browser-check.mjs video [url]                     hero film in real time: plays once, pause, no replay,
-//                                                                  deep link, autoplay refused, reduced motion, slow network
+//   node scripts/browser-check.mjs video [url]                     hero film in real time: plays once, pause, no replay;
+//                                                                  opens at the top, autoplay refused, reduced motion, slow network
 //   node scripts/browser-check.mjs page <url> <width> <height>     console errors, broken images, anchors, overflow
 //   node scripts/browser-check.mjs shot <url> <width> <height> <out.png> [--full] [--reduced-motion]
 //
@@ -121,7 +121,8 @@ async function videoCheck(url) {
     const v = document.querySelector("[data-hero-video]"), t = document.querySelector("[data-video-toggle]");
     return { scenario: ${JSON.stringify(scenario)}, at: ${JSON.stringify(at)}, state: t.dataset.state,
       button: t.hidden ? "hidden" : t.textContent.trim(), time: Math.round(v.currentTime * 10) / 10,
-      filmVisible: v.classList.contains("is-on"), played: sessionStorage.getItem("congdong-hero-played") };
+      filmVisible: v.classList.contains("is-on"), played: sessionStorage.getItem("congdong-hero-played"),
+      scrollY: Math.round(scrollY), address: location.href.replace(location.origin, "") };
   })()`).then((row) => log.push(row));
   const click = (page) => page.evaluate(`document.querySelector("[data-video-toggle]").click()`);
   const done = (page, scenario) => {
@@ -140,26 +141,30 @@ async function videoCheck(url) {
   await sleep(2500); await film(page, "top", "reload, same session");
   done(page, "top");
 
-  // a link straight to a section must not use the film up off-screen
+  // an address with a #section still opens at the top, without the #section, and the film plays
   page = await openPage();
   await goto(page, new URL("#training", url).href, 390, 844);
-  await sleep(3000); await film(page, "deep link", "3s at #training");
-  await page.evaluate(`scrollTo({ top: 0, behavior: "instant" })`);
-  await sleep(2500); await film(page, "deep link", "2.5s after scrolling to the top");
-  done(page, "deep link");
+  await sleep(2500); await film(page, "opened with #training", "after 2.5s");
+  done(page, "opened with #training");
 
-  // a browser that refuses autoplay (iOS Low Power Mode) gets a play button; the first click lifts the refusal
+  // menu links leave the address alone, and a reload starts at the top again
+  page = await openPage();
+  await goto(page, url, 390, 844);
+  await page.evaluate(`document.querySelector('a[href="#training"]').click()`);
+  await page.evaluate(`scrollTo({ top: document.getElementById("training").offsetTop, behavior: "instant" })`);
+  await sleep(500); await film(page, "link, then reload", "at 集训 after clicking its link");
+  const reloaded = page.once("Page.loadEventFired");
+  await page.send("Page.reload");
+  await reloaded;
+  await sleep(500); await film(page, "link, then reload", "after reload");
+  done(page, "link, then reload");
+
+  // a browser that refuses autoplay (iOS Low Power Mode) keeps the night still, with no play button
   page = await openPage();
   await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `
-    const realPlay = HTMLMediaElement.prototype.play;
-    let refuse = true;
-    addEventListener("click", () => { refuse = false; }, true);
-    HTMLMediaElement.prototype.play = function () {
-      return refuse ? Promise.reject(new DOMException("autoplay refused", "NotAllowedError")) : realPlay.call(this);
-    };` });
+    HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException("autoplay refused", "NotAllowedError"));` });
   await goto(page, url, 390, 844);
   await sleep(2000); await film(page, "autoplay refused", "after 2s");
-  await click(page); await sleep(2500); await film(page, "autoplay refused", "2.5s after the play button");
   done(page, "autoplay refused");
 
   page = await openPage();

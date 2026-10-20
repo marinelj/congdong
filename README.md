@@ -20,7 +20,7 @@ npm run preview         # 预览构建结果 http://127.0.0.1:4322/
 
 ```sh
 node scripts/browser-check.mjs video http://127.0.0.1:4321/          # 首屏视频：只播一次、可暂停、没有重播；
-                                                                     # 另测直达链接、自动播放被拒、减少动态效果、慢网速
+                                                                     # 另测带 # 的地址从顶部打开、自动播放被拒、减少动态效果、慢网速
 node scripts/browser-check.mjs page  http://127.0.0.1:4322/ 390 844  # 控制台错误、图片、锚点、横向溢出
 node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--full] [--reduced-motion]
 ```

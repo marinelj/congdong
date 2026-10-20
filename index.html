@@ -12,6 +12,12 @@
 <link rel="icon" type="image/png" sizes="64x64" href="./media/brand/favicon-64.png">
 <link rel="apple-touch-icon" href="./media/brand/apple-touch-icon.png">
 <link rel="stylesheet" href="./src/styles/main.css">
+<script>
+  /* the page always opens at the top, where the film is: drop any #section from the address
+     before the browser scrolls to it, and don't restore the old scroll position on reload */
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+</script>
 </head>
 <body>
 <a class="skip-link" href="#main">跳到正文</a>

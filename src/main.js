@@ -36,7 +36,8 @@ $("[data-menu-open]").addEventListener("click", () => menu.showModal());
 $("[data-menu-close]").addEventListener("click", () => menu.close());
 menu.addEventListener("click", (event) => { if (event.target === menu) menu.close(); });
 
-/* in-page links: scroll, then move focus to the section for keyboard and screen-reader users */
+/* in-page links: scroll, then move focus to the section for keyboard and screen-reader users.
+   The address keeps no #section, so a reload or a copied link opens at the top. */
 document.addEventListener("click", (event) => {
   const link = event.target.closest('a[href^="#"]');
   if (!link || link.hasAttribute("data-open-sheet")) return;
@@ -46,7 +47,6 @@ document.addEventListener("click", (event) => {
   if (menu.open) menu.close();
   target.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
   target.focus({ preventScroll: true });
-  history.pushState(null, "", link.hash);
 });
 
 /* consult sheet (links fall back to #contact without JS) */
@@ -120,11 +120,11 @@ $$("[data-copy-template]").forEach((button) => {
   });
 });
 
-/* hero film: plays once, then fades back to the night still.
-   It only starts while the hero is on screen (a link straight to #training must not use it up
-   unseen) and waits for the network however slow it is. With reduced motion, Save-Data, or a
-   browser that refuses autoplay (e.g. iOS Low Power Mode) it is offered with a play button
-   instead. Once it has played this session there is no replay. */
+/* hero film: plays once by itself, then fades back to the night still. The only control is a
+   pause button while it runs; there is no play or replay button. It starts only while the hero is
+   on screen and waits for the network however slow it is. With reduced motion, Save-Data, a
+   browser that refuses autoplay (e.g. iOS Low Power Mode), or once it has played this session,
+   the night still simply stays. */
 const video = $("[data-hero-video]");
 const toggle = $("[data-video-toggle]");
 const toggleLabel = $("[data-video-label]");
@@ -139,15 +139,14 @@ function rememberPlayed() {
 }
 
 if (video && toggle) {
-  let state = "idle";          // idle | offer | playing | paused | ended
+  let state = "idle";          // idle | playing | paused | ended
   let autoplay = false;        // start by itself the next time the hero is on screen
   let inView = false;
   let pausedByScroll = false;
   let frame = 0;
 
-  // the button only offers what the film can still do; after the end there is deliberately no replay
+  // the control only exists while the film is on screen, so it can be paused
   const LABELS = {
-    offer: ["播放宣传片", "播放宣传片"],
     playing: ["暂停", "暂停宣传片"],
     paused: ["继续播放", "继续播放宣传片"]
   };
@@ -196,9 +195,7 @@ if (video && toggle) {
       setState("playing");
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(tick);
-    }, (error) => {
-      if (error.name === "NotAllowedError" && state !== "playing") setState("offer");
-    });
+    }, () => { /* refused or interrupted: keep the current state, so a refused autoplay leaves the still */ });
   };
 
   video.addEventListener("ended", finish);
@@ -226,10 +223,9 @@ if (video && toggle) {
 
   const saveData = Boolean(navigator.connection && navigator.connection.saveData);
   if (playedThisSession()) setState("ended");
-  else if (reduceMotion.matches || saveData) setState("offer");
   else {
     setState("idle");
-    autoplay = true;
+    autoplay = !reduceMotion.matches && !saveData;
   }
 
   // "on screen" means at least a quarter of the hero; isIntersecting alone is true for any sliver
