@@ -14,12 +14,17 @@
   --giant: "Anton", Impact, "Arial Narrow", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
   --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Noto Sans SC", "Microsoft YaHei", sans-serif;
-  --gutter: 16px;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  /* side margins also clear the notch when a phone is turned sideways */
+  --gutter: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
   --max: 1200px;
   --header-h: 64px;
 }
 @media (min-width: 960px) {
-  :root { --gutter: 40px; --header-h: 76px; }
+  :root { --gutter: max(40px, env(safe-area-inset-left), env(safe-area-inset-right)); --header-h: 76px; }
+}
+@media (orientation: landscape) and (max-height: 540px) {
+  :root { --header-h: 56px; }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -27,7 +32,10 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: var(--header-h);
+  scrollbar-gutter: stable;
 }
+/* the page behind an open menu or consult sheet stays put */
+html:has(dialog[open]) { overflow: hidden; }
 /* no CSS smooth scrolling: main.js glides in-page links itself (and respects reduced motion) */
 body {
   margin: 0;
@@ -38,9 +46,11 @@ body {
 }
 img, video { display: block; max-width: 100%; height: auto; }
 a { color: inherit; }
+a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button { font: inherit; color: inherit; }
-h1, h2, h3 { margin: 0; font-weight: 600; line-height: 1.25; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; line-height: 1.25; text-wrap: balance; }
 p, figure, dl, dd { margin: 0; }
+p, dd { text-wrap: pretty; }
 :focus-visible { outline: 3px solid var(--electric-text); outline-offset: 3px; }
 [tabindex="-1"]:focus { outline: none; }
 
@@ -57,22 +67,37 @@ p, figure, dl, dd { margin: 0; }
 }
 .skip-link:focus { top: 8px; }
 
-/* buttons */
+/* buttons: hover only where there is a pointer that hovers; a press gives every device feedback */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 12px;
   min-height: 52px; padding: 0 20px; border: 0; border-radius: 0; cursor: pointer;
   font-size: 16px; font-weight: 600; line-height: 1.2; text-decoration: none;
-  transition: background-color .2s ease, box-shadow .2s ease;
+  transition: background-color .2s ease, box-shadow .2s ease, color .2s ease, transform .15s ease;
 }
+.btn svg { flex: none; transition: transform .25s var(--ease-out); }
+.btn:active { transform: scale(.98); }
 .btn-primary { background: var(--electric); color: #fff; }
-.btn-primary:hover, .btn-primary:active { background: var(--electric-press); }
+.btn-primary:active { background: var(--electric-press); }
 .btn-line { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6); }
-.btn-line:hover { box-shadow: inset 0 0 0 1px #fff; }
+.btn-line:active { background: rgba(255, 255, 255, .08); }
+.btn.is-copied { box-shadow: inset 0 0 0 1px var(--electric-text); color: var(--electric-text); }
+.btn.is-copied::before {
+  content: ""; width: 6px; height: 12px; margin: 0 2px 4px 0;
+  border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
 .btn-sm { min-height: 40px; padding: 0 16px; font-size: 14px; }
 .btn-block { width: 100%; }
 .icon-btn {
   width: 44px; height: 44px; flex: none; display: grid; place-items: center;
   border: 1px solid rgba(255, 255, 255, .28); background: rgba(0, 0, 0, .25); color: #fff; cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.icon-btn:active { background: rgba(255, 255, 255, .1); }
+@media (hover: hover) {
+  .btn-primary:hover { background: var(--electric-press); }
+  .btn-line:hover { box-shadow: inset 0 0 0 1px #fff; background: rgba(255, 255, 255, .06); }
+  .btn:hover svg { transform: translateX(3px); }
+  .icon-btn:hover { border-color: rgba(255, 255, 255, .6); }
 }
 
 /* header */
@@ -87,16 +112,27 @@ p, figure, dl, dd { margin: 0; }
   border-bottom-color: var(--line);
 }
 .header-inner { height: 100%; display: flex; align-items: center; gap: 16px; width: min(100% - 2 * var(--gutter), var(--max)); margin-inline: auto; }
-.brand { margin-right: auto; }
+.brand { display: flex; align-items: center; min-height: 44px; margin-right: auto; }
 .brand img { width: 108px; }
 .nav-desktop, .header-cta { display: none; }
 @media (min-width: 960px) {
   .brand img { width: 128px; }
   .nav-desktop { display: flex; gap: 28px; margin-right: 8px; }
-  .nav-desktop a { padding: 8px 0; color: #D5D8DD; font-size: 15px; text-decoration: none; }
-  .nav-desktop a:hover { color: #fff; }
+  .nav-desktop a { position: relative; padding: 8px 0; color: #D5D8DD; font-size: 15px; text-decoration: none; transition: color .2s ease; }
+  /* underline: grows in on hover, stays under the section being read */
+  .nav-desktop a::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 2px; height: 2px;
+    background: rgba(255, 255, 255, .45); transform: scaleX(0); transform-origin: left;
+    transition: transform .25s var(--ease-out), background-color .2s ease;
+  }
+  .nav-desktop a[aria-current="true"] { color: #fff; }
+  .nav-desktop a[aria-current="true"]::after { background: var(--electric-text); transform: scaleX(1); }
   .header-cta { display: inline-flex; }
   .menu-btn { display: none; }
+}
+@media (min-width: 960px) and (hover: hover) {
+  .nav-desktop a:hover { color: #fff; }
+  .nav-desktop a:hover::after { transform: scaleX(1); }
 }
 
 /* full-screen menu (phones) */
@@ -109,8 +145,17 @@ p, figure, dl, dd { margin: 0; }
 .menu-top { height: var(--header-h); display: flex; align-items: center; justify-content: space-between; }
 .menu-logo { width: 108px; }
 .menu-nav { display: flex; flex-direction: column; margin: 16px 0 28px; border-top: 1px solid var(--line); }
-.menu-nav a { display: flex; flex-direction: column; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 24px; font-weight: 600; line-height: 1.3; text-decoration: none; }
+.menu-nav a {
+  display: flex; flex-direction: column; padding: 14px 0; border-bottom: 1px solid var(--line);
+  font-size: 24px; font-weight: 600; line-height: 1.3; text-decoration: none; transition: color .2s ease;
+}
+.menu-nav a:active { color: var(--electric-text); }
 .menu-nav .mono { margin-bottom: 2px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.menu-nav a[aria-current="true"] { color: var(--electric-text); }
+@media (orientation: landscape) and (max-height: 540px) {
+  .menu-nav { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; margin: 4px 0 16px; }
+  .menu-nav a { padding: 10px 0; font-size: 20px; }
+}
 
 /* sticky consult dock (phones) */
 .dock {
@@ -127,6 +172,11 @@ p, figure, dl, dd { margin: 0; }
 .dock .btn { min-height: 48px; }
 @media (min-width: 960px) {
   .dock { display: none; }
+}
+/* phones turned sideways: the consult button moves up into the header, so no bar covers the bottom */
+@media (orientation: landscape) and (max-height: 540px) {
+  .dock { display: none; }
+  .header-cta { display: inline-flex; min-height: 44px; }
 }
 
 /* consult sheet */
@@ -151,22 +201,61 @@ p, figure, dl, dd { margin: 0; }
 .tel {
   display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px;
   background: var(--electric); color: #fff; font-family: var(--mono); font-size: 15px; text-decoration: none;
+  transition: background-color .2s ease;
+}
+.tel:active { background: var(--electric-press); }
+@media (hover: hover) {
+  .tel:hover { background: var(--electric-press); }
 }
 .qr { flex: none; text-align: center; }
 .qr img { width: 112px; height: 112px; padding: 6px; background: #fff; image-rendering: pixelated; }
 .qr figcaption { margin-top: 4px; color: var(--muted); font-size: 12px; }
 .sheet-close {
   position: absolute; top: 6px; right: 8px; width: 44px; height: 44px; display: grid; place-items: center;
-  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  border: 0; background: transparent; color: var(--muted); cursor: pointer; transition: color .2s ease;
+}
+.sheet-close:active { color: var(--text); }
+@media (hover: hover) {
+  .sheet-close:hover { color: var(--text); }
 }
 .copy-status { min-height: 1.4em; margin-top: 8px; color: var(--muted); font-size: 13px; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .sheet[open] { animation: sheet-up .28s cubic-bezier(.2, .8, .2, 1); }
-  .menu[open] { animation: fade-in .2s ease; }
+@media (orientation: landscape) and (max-height: 540px) {
+  .sheet-grabber { margin-bottom: 10px; }
+  .sheet-contact { margin: 10px 0 12px; padding: 10px 0; }
+  .qr img { width: 88px; height: 88px; padding: 5px; }
 }
-@keyframes sheet-up { from { transform: translateY(30%); opacity: .4; } }
+
+/* motion: dialogs ease in and out, menu links settle in one after another, sections rise in
+   as they arrive (main.js adds .reveal only when motion is welcome) */
+@media (prefers-reduced-motion: no-preference) {
+  .sheet[open] { animation: sheet-up .32s var(--ease-out); }
+  .sheet[open]::backdrop, .menu[open]::backdrop { animation: fade-in .28s ease; }
+  .sheet.is-closing { animation: sheet-down .24s ease-in both; }
+  .sheet.is-closing::backdrop, .menu.is-closing::backdrop { animation: fade-out .24s ease-in both; }
+  .menu[open] { animation: fade-in .2s ease; }
+  .menu.is-closing { animation: fade-out .2s ease-in both; }
+  .menu[open] .menu-nav a { animation: rise-in .4s var(--ease-out) both; }
+  .menu[open] .menu-nav a:nth-child(2) { animation-delay: .03s; }
+  .menu[open] .menu-nav a:nth-child(3) { animation-delay: .06s; }
+  .menu[open] .menu-nav a:nth-child(4) { animation-delay: .09s; }
+  .menu[open] .menu-nav a:nth-child(5) { animation-delay: .12s; }
+  .menu[open] .menu-nav a:nth-child(6) { animation-delay: .15s; }
+  .reveal { transition: opacity .7s var(--ease-out) var(--reveal-delay, 0s), transform .7s var(--ease-out) var(--reveal-delay, 0s); }
+  .reveal:not(.is-in) { opacity: 0; transform: translateY(18px); }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 960px) {
+  /* on wide screens the sheet is a centred panel, so it only lifts a little */
+  .sheet[open] { animation-name: panel-in; }
+  .sheet.is-closing { animation-name: panel-out; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes sheet-down { to { transform: translateY(100%); } }
+@keyframes panel-in { from { transform: translateY(12px); opacity: 0; } }
+@keyframes panel-out { to { transform: translateY(12px); opacity: 0; } }
 @keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes rise-in { from { transform: translateY(8px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .dock, .dock.is-visible, .site-header, .btn { transition: none; }
+  .dock, .dock.is-visible, .site-header, .btn, .btn svg { transition: none; }
+  .btn:active { transform: none; }
 }

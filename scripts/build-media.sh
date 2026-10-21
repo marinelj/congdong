@@ -18,7 +18,7 @@ to_jpeg() { # in out quality
 for id in 040 049 050 051 058 066 069 081 082 083 084 087 092 093 096 097 103 104 106 109 111 116 117 121 122 123 124 125 126 129 131; do
   sips --resampleWidth 800 -s format jpeg -s formatOptions 72 "$PHOTOS/$id.jpg" --out "$OUT/img/$id-800.jpg" >/dev/null
 done
-for id in 050 066 081 082 084 117; do
+for id in 066 081 082 084 097 131; do
   sips --resampleWidth 1600 -s format jpeg -s formatOptions 70 "$PHOTOS/$id.jpg" --out "$OUT/img/$id-1600.jpg" >/dev/null
 done
 
@@ -65,6 +65,13 @@ python3 "$ROOT/scripts/extract_logo.py" "$PHOTOS/038.jpg" "$TMP/emblem.png" 1725
 ffmpeg -loglevel error -i "$TMP/emblem.png" -vf "format=rgba,pad=310:310:0:21:color=black@0,scale=64:64:flags=lanczos" -y "$OUT/brand/favicon-64.png"
 ffmpeg -loglevel error -f lavfi -i "color=c=0x0A0B0D:s=180x180" -i "$TMP/emblem.png" \
   -filter_complex "[1]scale=124:-1:flags=lanczos[e];[0][e]overlay=(W-w)/2:(H-h)/2:format=auto" -frames:v 1 -y "$OUT/brand/apple-touch-icon.png"
+
+# 4c. Partner logos (white marks on transparent) from the official-partners poster (#043)
+python3 "$ROOT/scripts/extract_mark.py" "$PHOTOS/043.jpg" "$TMP/partner-merry.png"   640 222 300 270
+python3 "$ROOT/scripts/extract_mark.py" "$PHOTOS/043.jpg" "$TMP/partner-jinling.png" 632 588 356 288
+for name in partner-merry partner-jinling; do
+  ffmpeg -loglevel error -i "$TMP/$name.png" -vf "format=rgba,scale=-1:168:flags=lanczos" -y "$OUT/brand/$name.png"
+done
 
 # 5. Location map from #088 (map panel only, without the logo and banner)
 ffmpeg -loglevel error -i "$PHOTOS/088.jpg" -vf "crop=1946:1206:150:762" -y "$TMP/map.png"

@@ -1,8 +1,8 @@
 # 丛动体育官网
 
-移动端优先的丛动体育（CONGDONG SPORTS）官方网站。
+移动端优先的丛动体育（CONGDONG SPORTS）官方网站。线上地址：https://marinelj.github.io/congdong/
 
-已选定的视觉方向：C「夜场霓虹」的配色和排版，加上 A「赛场蓝」的首屏视频。视频只播放一次，不循环。
+已选定的视觉方向：C「夜场霓虹」的配色和排版，加上 A「赛场蓝」的首屏视频。视频自动播放、一直循环：每次播完停在最后一帧 10 秒，再从头播放；页面上没有播放按钮和进度条。
 
 ## 开发
 
@@ -19,11 +19,26 @@ npm run preview         # 预览构建结果 http://127.0.0.1:4322/
 浏览器检查脚本用 DevTools 协议驱动无头 Chrome，不需要额外依赖：
 
 ```sh
-node scripts/browser-check.mjs video http://127.0.0.1:4321/          # 首屏视频：每次打开播一次、可暂停、没有重播；
-                                                                     # 另测带 # 的地址从顶部打开、自动播放被拒、微信、减少动态效果、慢网速
-node scripts/browser-check.mjs page  http://127.0.0.1:4322/ 390 844  # 控制台错误、图片、锚点、横向溢出
-node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--full] [--reduced-motion]
+node scripts/browser-check.mjs video http://127.0.0.1:4321/          # 首屏视频：播完停 10 秒再重播、没有任何按钮；
+                                                                     # 另测滚出屏幕时暂停、横竖屏切换、带 # 的地址从顶部打开、
+                                                                     # 自动播放被拒、微信、减少动态效果、慢网速
+node scripts/browser-check.mjs ui    http://127.0.0.1:4321/          # 菜单、咨询面板、场地筛选、导航高亮、底部咨询条
+node scripts/browser-check.mjs page  http://127.0.0.1:4322/ 390 844  # 控制台错误、图片、锚点、横向溢出、过小的触控目标
+node scripts/browser-check.mjs shots http://127.0.0.1:4322/ 844 390 out/land   # 逐屏截图，和访客看到的一样
+node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--full] [--reduced-motion] [--wait=13000]
 ```
+
+## 部署到 GitHub Pages
+
+运行 `npm run deploy`（即 `bash scripts/deploy-pages.sh`），它会：
+
+1. 确认没有未提交的改动（线上版本总对应一个提交；确实要发布未提交的改动时加 `ALLOW_DIRTY=1`）；
+2. 构建网站；
+3. 把 `dist/` 推送到公开仓库 `marinelj/congdong` 的 `main` 分支。
+
+推送后大约一分钟，https://marinelj.github.io/congdong/ 就会更新。
+
+源码仓库保持私有：GitHub 免费账号只能从公开仓库发布 Pages，所以公开仓库里只有构建好的文件。它的 Pages 设置为「Deploy from a branch：`main` / 根目录」。不要在公开仓库里直接改文件，下次发布会被覆盖。
 
 ## 部署到 Jupyter 服务器
 
@@ -43,19 +58,20 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 | 路径 | 内容 |
 |---|---|
 | `index.html` | 首页 |
-| `src/main.js` | 交互：导航菜单、场地筛选、咨询面板、复制咨询模板、首屏视频播放一次 |
-| `src/styles/` | `base.css`（色彩变量和公共组件）、`sections.css`（各区块样式）、`fonts.css` |
-| `media/` | 网页使用的图片、视频、logo、图标和字体，由 `scripts/build-media.sh` 生成 |
+| `src/main.js` | 交互：导航菜单和当前栏目高亮、场地筛选、咨询面板、复制咨询模板、栏目渐显、首屏视频循环 |
+| `src/styles/` | `base.css`（色彩变量、公共组件和动效）、`sections.css`（各区块样式）、`fonts.css` |
+| `media/` | 网页使用的图片、视频、logo、合作伙伴 logo、图标和字体，由 `scripts/build-media.sh` 生成 |
 | `design/` | 视觉方向 A/B/C 对比页，留作记录，不参与构建 |
 | `assets-src/photos/` | 从品牌素材文件夹复制来的原图，按编号命名；编号对照见 `source-manifest.tsv` |
 | `assets-src/video/` | 怀柔宣传片原片（105 MB，不提交到 git） |
-| `scripts/` | 媒体生成、logo 抠图、预览服务器、浏览器检查 |
+| `scripts/` | 媒体生成、logo 抠图（`extract_logo.py`、`extract_mark.py`）、预览服务器、浏览器检查、两种部署 |
 
 ## 内容原则
 
-- 事实信息（地址、场地、房型、餐单、价格、电话、合作伙伴）只采用丛动提供的海报、价格表和餐单。
+- 事实信息（地址、场地、房型、餐单、价格、电话、合作伙伴）只采用丛动提供的海报、价格表和餐单。合作伙伴 logo 取自官方合作伙伴海报（#043）。
 - 价格只写「380 元/人/天起」，全站只放一个联系人：贺老师。
 - 不使用广告法禁止的绝对化用语，例如「最顶级」。
+- 升学规划写成发展目标，不承诺升学、录取或运动员等级认证结果（广告法第二十四条）。
 
 ## 字体授权
 
