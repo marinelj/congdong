@@ -3,7 +3,8 @@
 //
 //   node scripts/browser-check.mjs video [url]                     hero film in real time: plays, holds the last frame 10 s,
 //                                                                  starts again; no controls; off screen, turned sideways,
-//                                                                  opens at the top, autoplay refused, WeChat, reduced motion, slow network
+//                                                                  opens at the top, autoplay refused, WeChat (iOS bridge, Android canvas,
+//                                                                  refused video, silent bridge), reduced motion, slow network
 //   node scripts/browser-check.mjs ui [url] [out-prefix]           menu, consult sheet, facility filter, current-section marker, dock
 //   node scripts/browser-check.mjs page <url> <width> <height>     console errors, broken images, anchors, overflow, small touch targets
 //   node scripts/browser-check.mjs shot <url> <width> <height> <out.png> [--full] [--reduced-motion] [--wait=<ms>]
@@ -44,7 +45,8 @@ async function openPage() {
   await new Promise((r, j) => { ws.onopen = r; ws.onerror = j; });
   let id = 0;
   const pending = new Map();
-  const listeners = new Map();
+  const listeners = new Map();   // once(): the next event of a kind
+  const handlers = new Map();    // on(): every event of a kind
   const problems = [];
   ws.onmessage = ({ data }) => {
     const msg = JSON.parse(data);
@@ -65,12 +67,14 @@ async function openPage() {
       listeners.get(msg.method)(msg.params);
       listeners.delete(msg.method);
     }
+    if (msg.method && handlers.has(msg.method)) handlers.get(msg.method).forEach((fn) => fn(msg.params));
   };
   const send = (method, params = {}) => new Promise((ok, fail) => {
     pending.set(++id, { resolve: ok, reject: fail });
     ws.send(JSON.stringify({ id, method, params }));
   });
   const once = (method) => new Promise((ok) => listeners.set(method, ok));
+  const on = (method, fn) => handlers.set(method, [...(handlers.get(method) || []), fn]);
   const evaluate = async (expression) => {
     const { result, exceptionDetails } = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
     if (exceptionDetails) throw new Error(exceptionDetails.exception?.description || exceptionDetails.text);
@@ -79,7 +83,7 @@ async function openPage() {
   await send("Page.enable");
   await send("Runtime.enable");
   await send("Log.enable");
-  return { send, once, evaluate, problems, close: () => ws.close() };
+  return { send, once, on, evaluate, problems, close: () => ws.close() };
 }
 
 // scroll through the page so lazy images load and every section has revealed itself
@@ -142,15 +146,44 @@ async function waitFor(page, expression, timeoutMs) {
 // each scenario opens its own tab
 async function videoCheck(url) {
   const log = [];
+  // source is "video", or "canvas" where JSMpeg draws the film (WeChat); time and paused are the video's
   const film = (page, scenario, at) => page.evaluate(`(() => {
     const v = document.querySelector("[data-hero-video]"), hero = document.querySelector("[data-hero]");
+    const c = document.querySelector(".hero-media canvas"), onCanvas = hero.dataset.filmSource === "canvas";
+    const shown = onCanvas ? c : v;
     return { scenario: ${JSON.stringify(scenario)}, at: ${JSON.stringify(at)}, phase: hero.dataset.film,
-      time: Math.round(v.currentTime * 10) / 10, paused: v.paused, filmVisible: v.classList.contains("is-on"),
-      cut: (v.currentSrc.match(/hero-loop-(\\d+x\\d+)/) || [])[1] || "none",
+      source: hero.dataset.filmSource, time: onCanvas ? null : Math.round(v.currentTime * 10) / 10,
+      paused: onCanvas ? null : v.paused, filmVisible: !!shown && shown.classList.contains("is-on"),
+      cut: onCanvas ? (c && c.width > 300 ? (c.width > c.height ? "16x9" : "9x16") : "none")
+        : (v.currentSrc.match(/hero-loop-(\\d+x\\d+)/) || [])[1] || "none",
       controls: document.querySelectorAll("[data-video-toggle], .hero-play, .hero-progress, video[controls]").length,
       scrollY: Math.round(scrollY), address: location.href.replace(location.origin, "") };
   })()`).then((row) => log.push(row));
   const phaseIs = (phase) => `document.querySelector("[data-hero]").dataset.film === "${phase}"`;
+  // whether the picture changes over ms milliseconds, from two small screenshots of the screen
+  const moving = async (page, ms = 800) => {
+    const [width, height] = await page.evaluate("[innerWidth, innerHeight]");
+    const clip = { x: 0, y: 0, width, height, scale: 0.25 };
+    const before = (await page.send("Page.captureScreenshot", { format: "png", clip })).data;
+    await sleep(ms);
+    return before !== (await page.send("Page.captureScreenshot", { format: "png", clip })).data;
+  };
+  // the film files a page downloads, without Vite's content hash (and without the dev server's
+  // ?url lookups, which only return a file's address)
+  const fetched = (page) => {
+    const files = new Set();
+    page.on("Network.requestWillBeSent", ({ request }) => {
+      if (/[?&]url\b/.test(request.url)) return;
+      const name = (request.url.match(/(hero-loop-[^/?#]+|jsmpeg[^/?#]+)/) || [])[1];
+      if (name) files.add(name.replace(/-[\w-]{8}(\.\w+)$/, "$1"));
+    });
+    return files;
+  };
+  const ANDROID_WECHAT = "Mozilla/5.0 (Linux; Android 14; 23127PN0CC Build/UKQ1.230804.001; wv) AppleWebKit/537.36 " +
+    "(KHTML, like Gecko) Version/4.0 Chrome/130.0.6723.103 Mobile Safari/537.36 XWEB/1300333 MMWEBSDK/20241103 " +
+    "MicroMessenger/8.0.55.2780(0x28003737) WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64";
+  const IPHONE_WECHAT = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.50";
+  const REFUSE_VIDEO = `HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException("autoplay refused", "NotAllowedError"));`;
   const done = (page, scenario) => {
     if (page.problems.length) log.push({ scenario, consoleProblems: page.problems });
     page.close();
@@ -221,17 +254,14 @@ async function videoCheck(url) {
 
   // a browser that refuses autoplay (iOS Low Power Mode) keeps the night still, with no controls
   page = await openPage();
-  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `
-    HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException("autoplay refused", "NotAllowedError"));` });
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: REFUSE_VIDEO });
   await goto(page, url, 390, 844);
   await sleep(2000); await film(page, "autoplay refused", "after 2s");
   done(page, "autoplay refused");
 
-  // WeChat's in-app browser: autoplay is refused except from the WeixinJSBridge callback
+  // WeChat on iOS: autoplay is refused except from the WeixinJSBridge callback
   page = await openPage();
-  await page.send("Emulation.setUserAgentOverride", {
-    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.50"
-  });
+  await page.send("Emulation.setUserAgentOverride", { userAgent: IPHONE_WECHAT });
   await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `
     const realPlay = HTMLMediaElement.prototype.play;
     let insideBridge = false;
@@ -248,6 +278,72 @@ async function videoCheck(url) {
   const wechatAgain = wechatHold === null ? null : await waitFor(page, phaseIs("playing"), 15000);
   await film(page, "WeChat", `restarted after the hold (through the bridge): ${wechatAgain !== null}`);
   done(page, "WeChat");
+
+  // WeChat on Android never starts a video by itself: JSMpeg draws the film on a canvas, the MP4
+  // is never fetched, and it holds, starts again, and pauses off screen the same way
+  page = await openPage();
+  await page.send("Network.enable");
+  let files = fetched(page);
+  await page.send("Emulation.setUserAgentOverride", { userAgent: ANDROID_WECHAT });
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: REFUSE_VIDEO });
+  await goto(page, url, 390, 844);
+  const drawnIn = await waitFor(page, phaseIs("playing"), 30000);
+  await film(page, "WeChat on Android", `playing ${drawnIn}s after load, picture moving: ${await moving(page)}`);
+  const canvasRun = await waitFor(page, phaseIs("holding"), 20000);
+  const held = Date.now();
+  await film(page, "WeChat on Android", `holding after ${canvasRun}s of film, picture still: ${!(await moving(page, 2000))}`);
+  await waitFor(page, phaseIs("playing"), 15000);
+  const rerun = Date.now();
+  await film(page, "WeChat on Android", `playing again after a ${((rerun - held) / 1000).toFixed(1)}s hold, ` +
+    `picture moving: ${await moving(page)}`);
+  await sleep(1200);
+  await page.evaluate(`scrollTo({ top: innerHeight * 1.5, behavior: "instant" })`);
+  await sleep(4000);
+  await page.evaluate(`scrollTo({ top: 0, behavior: "instant" })`);
+  await waitFor(page, phaseIs("holding"), 20000);
+  await film(page, "WeChat on Android", `second run took ${((Date.now() - rerun) / 1000).toFixed(1)}s ` +
+    `with 4s of it off screen (about 14.6 when it pauses)`);
+  log.push({ scenario: "WeChat on Android", fetched: [...files] });
+  done(page, "WeChat on Android");
+
+  // turning the phone brings the canvas the wide cut, from the top
+  page = await openPage();
+  await page.send("Network.enable");
+  files = fetched(page);
+  await page.send("Emulation.setUserAgentOverride", { userAgent: ANDROID_WECHAT });
+  await goto(page, url, 390, 844);
+  await waitFor(page, phaseIs("playing"), 30000);
+  await sleep(2000);
+  await page.send("Emulation.setDeviceMetricsOverride", {
+    width: 844, height: 390, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: "landscapePrimary", angle: 90 }
+  });
+  const wideIn = await waitFor(page, `(() => { const c = document.querySelector(".hero-media canvas");
+    return ${phaseIs("playing")} && c && c.width > c.height; })()`, 30000);
+  await film(page, "WeChat on Android, turned", `wide cut playing ${wideIn}s after turning, picture moving: ${await moving(page)}`);
+  log.push({ scenario: "WeChat on Android, turned", fetched: [...files] });
+  done(page, "WeChat on Android, turned");
+
+  // WeChat refusing the video even through its bridge (a stricter iOS build): the canvas takes over
+  page = await openPage();
+  await page.send("Network.enable");
+  files = fetched(page);
+  await page.send("Emulation.setUserAgentOverride", { userAgent: IPHONE_WECHAT });
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: REFUSE_VIDEO + `
+    window.WeixinJSBridge = { invoke: (name, args, callback) => setTimeout(() => callback({}), 50) };` });
+  await goto(page, url, 390, 844);
+  const tookOver = await waitFor(page, phaseIs("playing"), 30000);
+  await film(page, "WeChat refuses the video", `playing ${tookOver}s after load, picture moving: ${await moving(page)}`);
+  log.push({ scenario: "WeChat refuses the video", fetched: [...files] });
+  done(page, "WeChat refuses the video");
+
+  // a WeChat whose bridge never answers (e.g. the desktop app) mustn't keep the film waiting
+  page = await openPage();
+  await page.send("Emulation.setUserAgentOverride", { userAgent: IPHONE_WECHAT });
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `window.WeixinJSBridge = { invoke() {} };` });
+  await goto(page, url, 390, 844);
+  const silent = await waitFor(page, phaseIs("playing"), 15000);
+  await film(page, "WeChat bridge silent", `playing ${silent}s after load`);
+  done(page, "WeChat bridge silent");
 
   page = await openPage();
   await page.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });

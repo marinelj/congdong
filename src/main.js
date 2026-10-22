@@ -2,6 +2,11 @@
    facility filter, consult dock and sheet, inquiry template, section reveals, and the hero film
    that repeats with a hold on its last frame. */
 
+// only fetched where the hero film is drawn on a canvas (WeChat; see the film at the end)
+import jsmpegUrl from "./vendor/jsmpeg.min.js?url";
+import mpegTall from "../media/video/hero-loop-9x16.m2t?url";
+import mpegWide from "../media/video/hero-loop-16x9.m2t?url";
+
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -223,8 +228,11 @@ if (!reduceMotion.matches && "IntersectionObserver" in window) {
 /* hero film: plays by itself and repeats for as long as the page is open. After each run the
    last frame stays up for HOLD_MS, then the film starts again from the top. There are no controls.
    It only runs while at least a quarter of the hero is on screen and the tab is visible, and it
-   waits for the network however slow it is. With reduced motion, Save-Data, or a browser that
-   refuses autoplay (e.g. iOS Low Power Mode) the night still simply stays. */
+   waits for the network however slow it is.
+   WeChat's in-app browser won't start a <video> by itself on Android, and may refuse one elsewhere;
+   there JSMpeg decodes an MPEG-1 copy of the film onto a canvas, which needs no permission. With
+   reduced motion, Save-Data, or another browser that refuses autoplay (e.g. iOS Low Power Mode)
+   the night still simply stays. */
 const HOLD_MS = 10000;
 const video = $("[data-hero-video]");
 
@@ -232,8 +240,9 @@ if (video) {
   let wanted = !reduceMotion.matches && !(navigator.connection && navigator.connection.saveData);
   const inWeChat = /MicroMessenger/i.test(navigator.userAgent);
   const landscape = window.matchMedia("(orientation: landscape)");
+  let film;                  // what shows the film: videoFilm() or canvasFilm(), below
   let phase = "idle";        // idle | playing | holding
-  let starting = false;      // a play() request is in flight
+  let starting = false;      // a run or resume is in flight
   let holdLeft = HOLD_MS;    // what remains of the hold, kept while the hero is off screen
   let holdTimer = 0;
   let holdSince = 0;
@@ -249,41 +258,39 @@ if (video) {
   const setPhase = (next) => {
     phase = next;
     hero.dataset.film = next;
-    video.classList.toggle("is-on", next !== "idle");
+    film.show(next !== "idle");
   };
-  // the cut made for the screen's current shape (the inline script in index.html picks the first one)
-  const cut = () => $(`source[data-shape="${landscape.matches ? "wide" : "tall"}"]`, video).src;
+  const useFilm = (next) => {
+    film = next;
+    hero.dataset.filmSource = next.source;
+  };
 
-  // WeChat's in-app browser may only let a video start from its bridge callback
-  const requestPlay = () => new Promise((resolve, reject) => {
-    if (inWeChat && window.WeixinJSBridge) {
-      window.WeixinJSBridge.invoke("getNetworkType", {}, () => video.play().then(resolve, reject));
-    } else {
-      video.play().then(resolve, reject);
-    }
-  });
-  const play = () => {
+  // has the film run from the top or carry on; that may take as long as the network does
+  const begin = (request) => {
     if (starting) return;
     starting = true;
-    requestPlay().then(() => {
+    request().then(() => {
       starting = false;
       if (!onStage()) {        // on a slow network the visitor may have scrolled on before it started
-        video.pause();
+        film.pause();
         return;
       }
       setPhase("playing");
-      requestAnimationFrame(watchEnd);
-    }, () => {
+      film.watch();
+    }, (error) => {
       // refused (e.g. iOS Low Power Mode) or interrupted: back to the still; a later chance retries
       starting = false;
-      if (video.paused) setPhase("idle");
+      if (film.paused) setPhase("idle");
+      // when it's WeChat refusing the video, the canvas takes over
+      if (inWeChat && film.source === "video" && error && error.name === "NotAllowedError") {
+        film.drop();
+        useFilm(canvasFilm());
+        update();
+      }
     });
   };
-  const start = () => {
-    if (!video.getAttribute("src")) video.src = cut();
-    video.currentTime = 0;
-    play();
-  };
+  const start = () => begin(() => film.run());
+  const play = () => begin(() => film.resume());
 
   // the hold counts down only while the hero is on screen
   const runHold = () => {
@@ -303,22 +310,11 @@ if (video) {
   };
   const hold = () => {
     if (phase !== "playing") return;
-    video.pause();
-    if (!video.ended) video.currentTime = video.duration; // rest exactly on the last frame
+    film.rest();
     setPhase("holding");
     holdLeft = HOLD_MS;
     if (onStage()) runHold();
   };
-
-  // some webviews (and headless Chrome) stop on the last frame without firing "ended"
-  const reachedEnd = () => video.duration > 0 && video.currentTime >= video.duration - 0.05;
-  const watchEnd = () => {
-    if (phase !== "playing" || video.paused) return;
-    if (reachedEnd()) hold();
-    else requestAnimationFrame(watchEnd);
-  };
-  video.addEventListener("ended", hold);
-  video.addEventListener("pause", () => { if (reachedEnd()) hold(); });
 
   const update = () => {
     if (!wanted) return;
@@ -326,8 +322,8 @@ if (video) {
     if (phase === "idle") {
       if (on && !starting) start();
     } else if (phase === "playing") {
-      if (!on) video.pause();
-      else if (video.paused) play();
+      if (!on) film.pause();
+      else if (film.paused) play();
     } else if (on) {
       runHold();
     } else {
@@ -335,6 +331,164 @@ if (video) {
     }
   };
 
+  // the <video>, in the cut made for the screen's shape (the inline script in index.html picks the first one)
+  const videoFilm = () => {
+    const cut = () => $(`source[data-shape="${landscape.matches ? "wide" : "tall"}"]`, video).src;
+    // WeChat on iOS lets a video start only from its bridge's callback. The bridge can turn up a
+    // moment after the page, so wait for it briefly, but never hang on one that doesn't answer.
+    const viaBridge = (go) => {
+      let asked = false;
+      const once = () => {
+        if (asked) return;
+        asked = true;
+        go();
+      };
+      const ask = () => window.WeixinJSBridge.invoke("getNetworkType", {}, once);
+      if (window.WeixinJSBridge) ask();
+      else document.addEventListener("WeixinJSBridgeReady", ask, { once: true });
+      setTimeout(once, 2000);
+    };
+    const requestPlay = () => new Promise((resolve, reject) => {
+      const go = () => video.play().then(resolve, reject);
+      if (inWeChat) viaBridge(go);
+      else go();
+    });
+    // some webviews (and headless Chrome) stop on the last frame without firing "ended"
+    const reachedEnd = () => video.duration > 0 && video.currentTime >= video.duration - 0.05;
+    const watchEnd = () => {
+      if (phase !== "playing" || video.paused) return;
+      if (reachedEnd()) hold();
+      else requestAnimationFrame(watchEnd);
+    };
+    video.addEventListener("ended", hold);
+    video.addEventListener("pause", () => { if (reachedEnd()) hold(); });
+
+    return {
+      source: "video",
+      get paused() { return video.paused; },
+      run() {
+        if (!video.getAttribute("src")) video.src = cut();
+        video.currentTime = 0;
+        return requestPlay();
+      },
+      resume: requestPlay,
+      watch() { requestAnimationFrame(watchEnd); },
+      pause() { video.pause(); },
+      rest() {
+        video.pause();
+        if (!video.ended) video.currentTime = video.duration; // rest exactly on the last frame
+      },
+      show(on) { video.classList.toggle("is-on", on); },
+      // a turned phone gets the cut made for its new shape, picking up where the film was
+      reshape() {
+        if (!video.getAttribute("src")) return;
+        const next = cut();
+        if (video.currentSrc === next) return;
+        const at = video.currentTime;
+        const resume = phase === "playing" && !video.paused;
+        video.src = next;
+        video.addEventListener("loadedmetadata", () => {
+          if (phase === "holding") video.currentTime = video.duration;
+          else if (phase === "playing") {
+            video.currentTime = at;
+            if (resume) play();
+          } else update();
+        }, { once: true });
+      },
+      // the canvas took over: stop fetching the video, without it falling back on its <source> list
+      drop() {
+        $$("source", video).forEach((source) => source.remove());
+        video.removeAttribute("src");
+        video.load();
+      },
+    };
+  };
+
+  // JSMpeg (src/vendor, MIT) decodes an MPEG-1 copy of the film onto a canvas, in the cut made for
+  // the screen's shape. The decoder and the film are only fetched once a canvas is needed.
+  let jsmpeg = null;
+  const loadJSMpeg = () => jsmpeg || (jsmpeg = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = jsmpegUrl;
+    script.onload = resolve;
+    script.onerror = () => {   // a dropped connection: the next chance to start tries again
+      jsmpeg = null;
+      script.remove();
+      reject(new Error("JSMpeg didn't load"));
+    };
+    document.head.append(script);
+  }));
+  const canvasFilm = () => {
+    let canvas = null;
+    let player = null;
+    let firstFrame = null;     // settles once the first frame is on the canvas
+    let drawn = false;
+    let stale = false;         // the phone turned while the film loaded: the next run brings the new cut
+    const build = () => {
+      canvas = document.createElement("canvas");
+      canvas.className = "hero-video";
+      canvas.setAttribute("aria-hidden", "true");
+      video.after(canvas);
+      firstFrame = new Promise((resolve) => {
+        player = new window.JSMpeg.Player(landscape.matches ? mpegWide : mpegTall, {
+          canvas,
+          audio: false,
+          loop: false,
+          progressive: false,      // one plain request, so the browser can cache the film
+          pauseWhenHidden: false,  // pausing is decided here, the same as for the video
+          onVideoDecode: () => {
+            drawn = true;
+            resolve();
+          },
+          onEnded: hold,
+        });
+      });
+    };
+    const teardown = () => {
+      player.destroy();
+      canvas.remove();
+      player = canvas = null;
+      drawn = stale = false;
+    };
+
+    return {
+      source: "canvas",
+      get paused() { return !player || player.paused; },
+      run() {
+        return loadJSMpeg().then(() => {
+          if (stale) teardown();
+          if (!player) build();
+          else if (drawn) player.seek(0);
+          player.play();
+          return firstFrame;
+        });
+      },
+      resume() {
+        player.play();
+        return Promise.resolve();
+      },
+      watch() {},              // JSMpeg reports the end itself
+      pause() { if (player) player.pause(); },
+      rest() {},               // it stops on the last frame, which stays on the canvas
+      show(on) { if (canvas) canvas.classList.toggle("is-on", on); },
+      // a turned phone gets the cut made for its new shape, from the top
+      reshape() {
+        if (!player) return;
+        if (starting) {
+          stale = true;
+          return;
+        }
+        teardown();
+        clearTimeout(holdTimer);
+        holdTimer = 0;
+        setPhase("idle");
+        update();
+      },
+      drop() {},
+    };
+  };
+
+  useFilm(inWeChat && /Android/i.test(navigator.userAgent) ? canvasFilm() : videoFilm());
   setPhase("idle");
   update();             // the page opens at the top, so there is no need to wait for the observer
   if ("IntersectionObserver" in window) {
@@ -344,35 +498,14 @@ if (video) {
     }, { threshold: 0.25 }).observe(hero);
   }
   document.addEventListener("visibilitychange", update);
-
-  // a turned phone gets the cut made for its new shape, picking up where the film was
-  landscape.addEventListener("change", () => {
-    if (!wanted || !video.getAttribute("src")) return;
-    const next = cut();
-    if (video.currentSrc === next) return;
-    const at = video.currentTime;
-    const resume = phase === "playing" && !video.paused;
-    video.src = next;
-    video.addEventListener("loadedmetadata", () => {
-      if (phase === "holding") video.currentTime = video.duration;
-      else if (phase === "playing") {
-        video.currentTime = at;
-        if (resume) play();
-      } else update();
-    }, { once: true });
-  });
+  landscape.addEventListener("change", () => { if (wanted) film.reshape(); });
 
   // turning on "reduce motion" while the page is open stops the film for good
   reduceMotion.addEventListener("change", () => {
     if (!reduceMotion.matches) return;
     wanted = false;
     pauseHold();
-    video.pause();
+    film.pause();
     setPhase("idle");
   });
-
-  // WeChat's bridge can arrive after the first attempt was refused
-  if (wanted && inWeChat && !window.WeixinJSBridge) {
-    document.addEventListener("WeixinJSBridgeReady", () => { if (phase === "idle") update(); }, false);
-  }
 }

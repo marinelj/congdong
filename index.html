@@ -76,9 +76,12 @@
       </video>
       <script>
         /* pick the cut that matches the screen's shape and start fetching it while the rest of the page
-           loads; src/main.js decides when it plays, and swaps the cut when the phone is turned */
+           loads; src/main.js decides when it plays, and swaps the cut when the phone is turned.
+           WeChat on Android won't start a video by itself, so there main.js draws the film on a
+           canvas instead and the video is never fetched. */
         (function (video) {
           if (matchMedia("(prefers-reduced-motion: reduce)").matches || (navigator.connection && navigator.connection.saveData)) return;
+          if (/MicroMessenger/i.test(navigator.userAgent) && /Android/i.test(navigator.userAgent)) return;
           var shape = matchMedia("(orientation: landscape)").matches ? "wide" : "tall";
           video.src = video.querySelector('source[data-shape="' + shape + '"]').src;
           video.preload = "auto";

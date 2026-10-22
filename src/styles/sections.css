@@ -22,14 +22,13 @@
 .hero-copy h1 em { font-style: normal; color: var(--electric-text); }
 .hero-lede { margin-top: 12px; color: #C9CDD3; font-size: 15px; }
 .cta-row { display: flex; gap: 10px; margin-top: 22px; }
-.cta-row .btn-primary { flex: 1; justify-content: space-between; }
+.cta-row .btn-primary { min-width: 220px; justify-content: space-between; } /* sits on the copy's left edge */
 @media (min-width: 960px) {
   .hero-content { padding: calc(var(--header-h) + 40px) 0 72px; }
   .hero-giant { font-size: clamp(160px, 15vw, 230px); }
   .hero-giant .outline { display: inline; margin-left: .12em; }
   .hero-copy { max-width: 620px; }
   .hero-lede { font-size: 17px; }
-  .cta-row .btn { flex: none; min-width: 220px; }
 }
 /* phones turned sideways: one-line wordmark and headline, button beside the copy */
 @media (orientation: landscape) and (max-height: 540px) {

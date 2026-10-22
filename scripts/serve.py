@@ -24,6 +24,7 @@ class Handler(SimpleHTTPRequestHandler):
     extensions_map = {
         **SimpleHTTPRequestHandler.extensions_map,
         ".js": "text/javascript",
+        ".m2t": "video/mp2t",
         ".mp4": "video/mp4",
         ".woff2": "font/woff2",
     }

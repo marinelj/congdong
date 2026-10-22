@@ -31,26 +31,37 @@ crop 084 hero-084-4x5  2419 3024 1613 0  840 1050   # morning pitch: corner arc 
 crop 066 hero-066-9x16 1701 3024  722 0  810 1440   # floodlit pitch at night
 crop 082 hero-082-9x16 2070 3680 1940 0  810 1440   # arena with CONGDONG court logo
 
-# 3. Hero loop from the Huairou film: balls -> hoop -> pitch -> tennis, 9:16, muted
-ffmpeg -loglevel error -i "$FILM" -filter_complex "\
-[0:v]split=4[s1][s2][s3][s4];\
-[s1]trim=start=8.1:end=10.9,setpts=PTS-STARTPTS,crop=608:1080:780:0[a];\
-[s2]trim=start=11.3:end=14.1,setpts=PTS-STARTPTS,crop=608:1080:596:0[b];\
-[s3]trim=start=25.0:end=27.6,setpts=PTS-STARTPTS,crop=608:1080:581:0[c];\
-[s4]trim=start=33.0:end=35.4,setpts=PTS-STARTPTS,crop=608:1080:656:0[d];\
-[a][b][c][d]concat=n=4:v=1:a=0,format=yuv420p[v]" \
-  -map "[v]" -an -c:v libx264 -profile:v high -preset slow -crf 27 -movflags +faststart \
-  -y "$OUT/video/hero-loop-9x16.mp4"
-# same cut in 16:9 for wide screens
-ffmpeg -loglevel error -i "$FILM" -filter_complex "\
-[0:v]split=4[s1][s2][s3][s4];\
-[s1]trim=start=8.1:end=10.9,setpts=PTS-STARTPTS[a];\
-[s2]trim=start=11.3:end=14.1,setpts=PTS-STARTPTS[b];\
-[s3]trim=start=25.0:end=27.6,setpts=PTS-STARTPTS[c];\
-[s4]trim=start=33.0:end=35.4,setpts=PTS-STARTPTS[d];\
-[a][b][c][d]concat=n=4:v=1:a=0,scale=1280:720:flags=lanczos,format=yuv420p[v]" \
-  -map "[v]" -an -c:v libx264 -profile:v high -preset slow -crf 27 -movflags +faststart \
-  -y "$OUT/video/hero-loop-16x9.mp4"
+# 3. Hero loop from the Huairou film: balls -> hoop -> pitch -> tennis, muted.
+#    The same four clips, cropped to 9:16 for phones and whole for wide screens.
+clips() { # one filter per clip, e.g. a crop ("null" keeps the whole frame)
+  echo "[0:v]split=4[s1][s2][s3][s4];\
+[s1]trim=start=8.1:end=10.9,setpts=PTS-STARTPTS,$1[a];\
+[s2]trim=start=11.3:end=14.1,setpts=PTS-STARTPTS,$2[b];\
+[s3]trim=start=25.0:end=27.6,setpts=PTS-STARTPTS,$3[c];\
+[s4]trim=start=33.0:end=35.4,setpts=PTS-STARTPTS,$4[d];\
+[a][b][c][d]concat=n=4:v=1:a=0"
+}
+TALL="$(clips crop=608:1080:780:0 crop=608:1080:596:0 crop=608:1080:581:0 crop=608:1080:656:0)"
+WIDE="$(clips null null null null)"
+h264() { # filter-graph out
+  ffmpeg -loglevel error -i "$FILM" -filter_complex "$1,format=yuv420p[v]" \
+    -map "[v]" -an -c:v libx264 -profile:v high -preset slow -crf 27 -movflags +faststart -y "$2"
+}
+h264 "$TALL" "$OUT/video/hero-loop-9x16.mp4"
+h264 "$WIDE,scale=1280:720:flags=lanczos" "$OUT/video/hero-loop-16x9.mp4"
+# MPEG-1 copies for WeChat, whose in-app browser won't start a <video> by itself on Android:
+# there JSMpeg draws the film on a canvas. Plain 188-byte MPEG-TS (.m2t: Vite would take .ts for
+# TypeScript), no B-frames, sizes in multiples of 16, two passes so the bits go where the motion is.
+mpeg1() { # filter-graph out
+  for pass in 1 2; do
+    ffmpeg -loglevel error -i "$FILM" -filter_complex "$1,format=yuv420p[v]" -map "[v]" -an \
+      -c:v mpeg1video -bf 0 -g 300 -mbd rd -trellis 2 -cmp 2 -subcmp 2 \
+      -b:v 1600k -maxrate 4000k -bufsize 4000k -pass "$pass" -passlogfile "$TMP/mpeg1" \
+      -f mpegts -mpegts_m2ts_mode 0 -y "$([ "$pass" = 1 ] && echo /dev/null || echo "$2")"
+  done
+}
+mpeg1 "$TALL,scale=576:1024:flags=lanczos" "$OUT/video/hero-loop-9x16.m2t"
+mpeg1 "$WIDE,scale=1024:576:flags=lanczos" "$OUT/video/hero-loop-16x9.m2t"
 ffmpeg -loglevel error -ss 8.1 -i "$FILM" -frames:v 1 -vf "crop=608:1080:780:0" -y "$TMP/hero-loop-poster.png"
 to_jpeg "$TMP/hero-loop-poster.png" "$OUT/video/hero-loop-9x16-poster.jpg" 72
 

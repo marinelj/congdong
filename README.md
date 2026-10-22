@@ -2,7 +2,7 @@
 
 移动端优先的丛动体育（CONGDONG SPORTS）官方网站。线上地址：https://marinelj.github.io/congdong/
 
-已选定的视觉方向：C「夜场霓虹」的配色和排版，加上 A「赛场蓝」的首屏视频。视频自动播放、一直循环：每次播完停在最后一帧 10 秒，再从头播放；页面上没有播放按钮和进度条。
+已选定的视觉方向：C「夜场霓虹」的配色和排版，加上 A「赛场蓝」的首屏视频。视频自动播放、一直循环：每次播完停在最后一帧 10 秒，再从头播放；页面上没有播放按钮和进度条。安卓微信不允许网页自动播放视频，所以在微信里改用 JSMpeg 把同一段视频的 MPEG-1 版本画在画布上，看起来一样；iOS 微信先用视频本身，被拒绝时同样换成画布。
 
 ## 开发
 
@@ -21,7 +21,8 @@ npm run preview         # 预览构建结果 http://127.0.0.1:4322/
 ```sh
 node scripts/browser-check.mjs video http://127.0.0.1:4321/          # 首屏视频：播完停 10 秒再重播、没有任何按钮；
                                                                      # 另测滚出屏幕时暂停、横竖屏切换、带 # 的地址从顶部打开、
-                                                                     # 自动播放被拒、微信、减少动态效果、慢网速
+                                                                     # 自动播放被拒、微信（iOS 桥接、安卓画布、视频被拒、桥接无响应）、
+                                                                     # 减少动态效果、慢网速
 node scripts/browser-check.mjs ui    http://127.0.0.1:4321/          # 菜单、咨询面板、场地筛选、导航高亮、底部咨询条
 node scripts/browser-check.mjs page  http://127.0.0.1:4322/ 390 844  # 控制台错误、图片、锚点、横向溢出、过小的触控目标
 node scripts/browser-check.mjs shots http://127.0.0.1:4322/ 844 390 out/land   # 逐屏截图，和访客看到的一样
@@ -58,9 +59,10 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 | 路径 | 内容 |
 |---|---|
 | `index.html` | 首页 |
-| `src/main.js` | 交互：导航菜单和当前栏目高亮、场地筛选、咨询面板、复制咨询模板、栏目渐显、首屏视频循环 |
+| `src/main.js` | 交互：导航菜单和当前栏目高亮、场地筛选、咨询面板、复制咨询模板、栏目渐显、首屏视频循环（微信里用画布） |
+| `src/vendor/` | JSMpeg 播放器（微信里在画布上播放首屏视频），原样取自上游，附 MIT 授权 |
 | `src/styles/` | `base.css`（色彩变量、公共组件和动效）、`sections.css`（各区块样式）、`fonts.css` |
-| `media/` | 网页使用的图片、视频、logo、合作伙伴 logo、图标和字体，由 `scripts/build-media.sh` 生成 |
+| `media/` | 网页使用的图片、视频（`.mp4`，以及微信画布用的 MPEG-1 版本 `.m2t`）、logo、合作伙伴 logo、图标和字体，由 `scripts/build-media.sh` 生成 |
 | `design/` | 视觉方向 A/B/C 对比页，留作记录，不参与构建 |
 | `assets-src/photos/` | 从品牌素材文件夹复制来的原图，按编号命名；编号对照见 `source-manifest.tsv` |
 | `assets-src/video/` | 怀柔宣传片原片（105 MB，不提交到 git） |
@@ -78,3 +80,7 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 - 正文用设备自带字体（苹方、鸿蒙、MiSans、微软雅黑等）。
 - 英文大标题用 Anton，本地托管，SIL Open Font License 1.1，授权文件在 `media/fonts/` 下。
 - 对比页另外用到得意黑、Barlow Condensed、Outfit，也都是 OFL 授权。
+
+## 第三方代码
+
+- JSMpeg（Dominic Szablewski，MIT 授权），取自 github.com/phoboslab/jsmpeg 的 924acfb 提交，未作修改，只在文件开头加了一行授权说明。授权全文见 `src/vendor/jsmpeg-LICENSE`。
