@@ -29,17 +29,11 @@ node scripts/browser-check.mjs shots http://127.0.0.1:4322/ 844 390 out/land   #
 node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--full] [--reduced-motion] [--wait=13000]
 ```
 
-## 部署到 GitHub Pages
+## 发布到 GitHub Pages
 
-运行 `npm run deploy`（即 `bash scripts/deploy-pages.sh`），它会：
+推送到 `main` 后，GitHub Actions（`.github/workflows/pages.yml`）会自动构建并发布，一两分钟后 https://marinelj.github.io/congdong/ 就会更新。也可以在仓库的 Actions 页面手动运行「Deploy to GitHub Pages」。仓库的 Pages 设置为「Source：GitHub Actions」。
 
-1. 确认没有未提交的改动（线上版本总对应一个提交；确实要发布未提交的改动时加 `ALLOW_DIRTY=1`）；
-2. 构建网站；
-3. 把 `dist/` 推送到公开仓库 `marinelj/congdong` 的 `main` 分支。
-
-推送后大约一分钟，https://marinelj.github.io/congdong/ 就会更新。
-
-源码仓库保持私有：GitHub 免费账号只能从公开仓库发布 Pages，所以公开仓库里只有构建好的文件。它的 Pages 设置为「Deploy from a branch：`main` / 根目录」。不要在公开仓库里直接改文件，下次发布会被覆盖。
+这个仓库是公开的。原始照片和海报（包括完整价格表）不放在这里，而是放在私有素材库 `marinelj/assets` 的 `congdong/` 文件夹里，见下文「重新生成图片和视频」。
 
 ## 部署到 Jupyter 服务器
 
@@ -54,6 +48,14 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 
 完整步骤，以及可以直接交给 ChatGPT 的提示词，见 `docs/deploy-jupyter-prompt.md`。
 
+## 重新生成图片和视频
+
+`media/` 里的文件由 `scripts/build-media.sh` 从原图生成，平时不需要重新生成。原图在私有素材库里：
+
+1. 把 `marinelj/assets` 克隆到这个仓库旁边（`../assets`），或者用环境变量 `CONGDONG_ASSETS` 指向它的 `congdong/` 文件夹；
+2. 怀柔宣传片原片有 105 MB，超过 GitHub 的单文件上限，没有放进素材库：从品牌素材文件夹复制到 `congdong/video/huairou-film.mp4`；
+3. 运行 `bash scripts/build-media.sh`。
+
 ## 目录
 
 | 路径 | 内容 |
@@ -64,9 +66,8 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 | `src/styles/` | `base.css`（色彩变量、公共组件和动效）、`sections.css`（各区块样式）、`fonts.css` |
 | `media/` | 网页使用的图片、视频（`.mp4`，以及微信画布用的 MPEG-1 版本 `.m2t`）、logo、合作伙伴 logo、图标和字体，由 `scripts/build-media.sh` 生成 |
 | `design/` | 视觉方向 A/B/C 对比页，留作记录，不参与构建 |
-| `assets-src/photos/` | 从品牌素材文件夹复制来的原图，按编号命名；编号对照见 `source-manifest.tsv` |
-| `assets-src/video/` | 怀柔宣传片原片（105 MB，不提交到 git） |
-| `scripts/` | 媒体生成、logo 抠图（`extract_logo.py`、`extract_mark.py`）、预览服务器、浏览器检查、两种部署 |
+| `scripts/` | 媒体生成、logo 抠图（`extract_logo.py`、`extract_mark.py`）、预览服务器、浏览器检查、部署到 Jupyter 服务器 |
+| `.github/workflows/pages.yml` | 推送到 `main` 时自动构建并发布到 GitHub Pages |
 
 ## 内容原则
 

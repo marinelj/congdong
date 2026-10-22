@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
-# Builds web-ready media in media/ from the originals in assets-src/.
+# Builds web-ready media in media/ from the originals, which live in the private repo marinelj/assets
+# under congdong/: clone it next to this repo (../assets), or point CONGDONG_ASSETS at its congdong/.
 # Needs: ffmpeg, python3, sips (macOS). Re-run any time; outputs are overwritten.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PHOTOS="$ROOT/assets-src/photos"
-FILM="$ROOT/assets-src/video/huairou-film.mp4"
+ASSETS="${CONGDONG_ASSETS:-$ROOT/../assets/congdong}"
+PHOTOS="$ASSETS/photos"
+FILM="$ASSETS/video/huairou-film.mp4"   # 105 MB, over GitHub's limit: copy it from the brand folder
+if [ ! -d "$PHOTOS" ]; then
+  echo "build-media.sh: no originals at $PHOTOS (clone marinelj/assets next to this repo, or set CONGDONG_ASSETS)" >&2
+  exit 1
+fi
 OUT="$ROOT/media"
 TMP="$ROOT/.cache/tmp"
 mkdir -p "$OUT/img" "$OUT/brand" "$OUT/video" "$TMP"

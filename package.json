@@ -1,12 +1,11 @@
 {
-  "name": "congdong-sports-website",
+  "name": "congdong",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4321 --strictPort",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4322 --strictPort",
-    "deploy": "bash scripts/deploy-pages.sh"
+    "preview": "vite preview --host 127.0.0.1 --port 4322 --strictPort"
   },
   "devDependencies": {
     "vite": "8.3.4"
