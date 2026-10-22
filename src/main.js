@@ -225,8 +225,9 @@ if (!reduceMotion.matches && "IntersectionObserver" in window) {
   });
 }
 
-/* hero film: plays by itself and repeats for as long as the page is open. After each run the
-   last frame stays up for HOLD_MS, then the film starts again from the top. There are no controls.
+/* hero film: plays by itself and repeats for as long as the page is open. After each run it fades
+   back to the night still, which stays up for HOLD_MS, then the film starts again from the top.
+   There are no controls.
    It only runs while at least a quarter of the hero is on screen and the tab is visible, and it
    waits for the network however slow it is.
    WeChat's in-app browser won't start a <video> by itself on Android, and may refuse one elsewhere;
@@ -258,7 +259,7 @@ if (video) {
   const setPhase = (next) => {
     phase = next;
     hero.dataset.film = next;
-    film.show(next !== "idle");
+    film.show(next === "playing");   // otherwise the night still shows, the hold included
   };
   const useFilm = (next) => {
     film = next;
@@ -388,8 +389,7 @@ if (video) {
         const resume = phase === "playing" && !video.paused;
         video.src = next;
         video.addEventListener("loadedmetadata", () => {
-          if (phase === "holding") video.currentTime = video.duration;
-          else if (phase === "playing") {
+          if (phase === "playing") {
             video.currentTime = at;
             if (resume) play();
           } else update();
@@ -423,7 +423,7 @@ if (video) {
     let player = null;
     let firstFrame = null;     // settles once the first frame is on the canvas
     let drawn = false;
-    let stale = false;         // the phone turned while the film loaded: the next run brings the new cut
+    let stale = false;         // the phone turned while the film loaded or held: the next run brings the new cut
     const build = () => {
       canvas = document.createElement("canvas");
       canvas.className = "hero-video";
@@ -469,18 +469,17 @@ if (video) {
       },
       watch() {},              // JSMpeg reports the end itself
       pause() { if (player) player.pause(); },
-      rest() {},               // it stops on the last frame, which stays on the canvas
+      rest() {},               // it stops on the last frame, which fades out with the canvas
       show(on) { if (canvas) canvas.classList.toggle("is-on", on); },
-      // a turned phone gets the cut made for its new shape, from the top
+      // a turned phone gets the cut made for its new shape, from the top; during the hold the
+      // still stays up for the rest of it
       reshape() {
         if (!player) return;
-        if (starting) {
+        if (starting || phase === "holding") {
           stale = true;
           return;
         }
         teardown();
-        clearTimeout(holdTimer);
-        holdTimer = 0;
         setPhase("idle");
         update();
       },

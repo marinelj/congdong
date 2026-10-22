@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Drives headless Chrome over the DevTools protocol (Node's built-in WebSocket, no dependencies).
 //
-//   node scripts/browser-check.mjs video [url]                     hero film in real time: plays, holds the last frame 10 s,
+//   node scripts/browser-check.mjs video [url]                     hero film in real time: plays, rests on the night still 10 s,
 //                                                                  starts again; no controls; off screen, turned sideways,
 //                                                                  opens at the top, autoplay refused, WeChat (iOS bridge, Android canvas,
 //                                                                  refused video, silent bridge), reduced motion, slow network
@@ -83,7 +83,12 @@ async function openPage() {
   await send("Page.enable");
   await send("Runtime.enable");
   await send("Log.enable");
-  return { send, once, on, evaluate, problems, close: () => ws.close() };
+  // closing shuts the tab too, so earlier scenarios don't keep playing the film in the background
+  const close = () => {
+    ws.close();
+    fetch(`http://127.0.0.1:${PORT}/json/close/${target.id}`).catch(() => {});
+  };
+  return { send, once, on, evaluate, problems, close };
 }
 
 // scroll through the page so lazy images load and every section has revealed itself
@@ -183,13 +188,15 @@ async function videoCheck(url) {
     "(KHTML, like Gecko) Version/4.0 Chrome/130.0.6723.103 Mobile Safari/537.36 XWEB/1300333 MMWEBSDK/20241103 " +
     "MicroMessenger/8.0.55.2780(0x28003737) WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64";
   const IPHONE_WECHAT = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.50";
+  const LANDSCAPE = { width: 844, height: 390, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: "landscapePrimary", angle: 90 } };
+  const PORTRAIT = { width: 390, height: 844, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: "portraitPrimary", angle: 0 } };
   const REFUSE_VIDEO = `HTMLMediaElement.prototype.play = () => Promise.reject(new DOMException("autoplay refused", "NotAllowedError"));`;
   const done = (page, scenario) => {
     if (page.problems.length) log.push({ scenario, consoleProblems: page.problems });
     page.close();
   };
 
-  // plays, holds the last frame for 10 s, then starts again from the top, with no controls anywhere
+  // plays, fades back to the night still for 10 s, then starts again from the top, with no controls anywhere
   let page = await openPage();
   await goto(page, url, 390, 844);
   const startedIn = await waitFor(page, phaseIs("playing"), 15000);
@@ -223,15 +230,20 @@ async function videoCheck(url) {
   await film(page, "off screen", `back: restarted ${rest}s later (7s of hold were left)`);
   done(page, "off screen");
 
-  // turning the phone swaps to the wide cut and carries on from the same moment
+  // turning the phone swaps to the wide cut and carries on from the same moment; turned back
+  // during the hold, the still stays up and the next run is the tall cut
   page = await openPage();
   await goto(page, url, 390, 844);
   await waitFor(page, phaseIs("playing"), 15000);
   await sleep(3000); await film(page, "turned sideways", "portrait, 3s in");
-  await page.send("Emulation.setDeviceMetricsOverride", {
-    width: 844, height: 390, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: "landscapePrimary", angle: 90 }
-  });
+  await page.send("Emulation.setDeviceMetricsOverride", LANDSCAPE);
   await sleep(1500); await film(page, "turned sideways", "1.5s after turning to landscape");
+  await waitFor(page, phaseIs("holding"), 15000);
+  await sleep(2000);
+  await page.send("Emulation.setDeviceMetricsOverride", PORTRAIT);
+  await sleep(2000); await film(page, "turned sideways", "turned back 2s into the hold, 2s later");
+  const tallAt = await waitFor(page, phaseIs("playing"), 15000);
+  await film(page, "turned sideways", `playing again ${tallAt}s later (6s of hold were left)`);
   done(page, "turned sideways");
 
   // an address with a #section still opens at the top, without the #section, and the film plays
@@ -291,7 +303,10 @@ async function videoCheck(url) {
   await film(page, "WeChat on Android", `playing ${drawnIn}s after load, picture moving: ${await moving(page)}`);
   const canvasRun = await waitFor(page, phaseIs("holding"), 20000);
   const held = Date.now();
-  await film(page, "WeChat on Android", `holding after ${canvasRun}s of film, picture still: ${!(await moving(page, 2000))}`);
+  // the canvas fades out to the night still (no screenshot comparison here: once the fade is over
+  // Chrome redraws the shade a level off in places)
+  const fadedIn = await waitFor(page, `getComputedStyle(document.querySelector(".hero-media canvas")).opacity === "0"`, 3000);
+  await film(page, "WeChat on Android", `holding after ${canvasRun}s of film, faded to the still in ${fadedIn}s`);
   await waitFor(page, phaseIs("playing"), 15000);
   const rerun = Date.now();
   await film(page, "WeChat on Android", `playing again after a ${((rerun - held) / 1000).toFixed(1)}s hold, ` +
@@ -306,7 +321,8 @@ async function videoCheck(url) {
   log.push({ scenario: "WeChat on Android", fetched: [...files] });
   done(page, "WeChat on Android");
 
-  // turning the phone brings the canvas the wide cut, from the top
+  // turning the phone brings the canvas the wide cut, from the top; turned back during the hold,
+  // the still stays up for the rest of it and the next run is the tall cut
   page = await openPage();
   await page.send("Network.enable");
   files = fetched(page);
@@ -314,12 +330,17 @@ async function videoCheck(url) {
   await goto(page, url, 390, 844);
   await waitFor(page, phaseIs("playing"), 30000);
   await sleep(2000);
-  await page.send("Emulation.setDeviceMetricsOverride", {
-    width: 844, height: 390, deviceScaleFactor: 2, mobile: true, screenOrientation: { type: "landscapePrimary", angle: 90 }
-  });
-  const wideIn = await waitFor(page, `(() => { const c = document.querySelector(".hero-media canvas");
-    return ${phaseIs("playing")} && c && c.width > c.height; })()`, 30000);
+  await page.send("Emulation.setDeviceMetricsOverride", LANDSCAPE);
+  const canvasIs = (shape) => `(() => { const c = document.querySelector(".hero-media canvas");
+    return ${phaseIs("playing")} && c && c.width > 300 && ${shape === "wide" ? "c.width > c.height" : "c.height > c.width"}; })()`;
+  const wideIn = await waitFor(page, canvasIs("wide"), 30000);
   await film(page, "WeChat on Android, turned", `wide cut playing ${wideIn}s after turning, picture moving: ${await moving(page)}`);
+  await waitFor(page, phaseIs("holding"), 20000);
+  await sleep(2000);
+  await page.send("Emulation.setDeviceMetricsOverride", PORTRAIT);
+  await sleep(2000); await film(page, "WeChat on Android, turned", "turned back 2s into the hold, 2s later");
+  const tallIn = await waitFor(page, canvasIs("tall"), 30000);
+  await film(page, "WeChat on Android, turned", `tall cut playing ${tallIn}s later (6s of hold were left)`);
   log.push({ scenario: "WeChat on Android, turned", fetched: [...files] });
   done(page, "WeChat on Android, turned");
 
