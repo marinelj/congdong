@@ -20,6 +20,10 @@
   --max: 1200px;
   --header-h: 64px;
 }
+/* the English and Japanese pages (en/, jp/) use their own system fonts; Japanese first, so shared
+   kanji take their Japanese forms rather than the Chinese ones */
+:root:lang(en) { --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+:root:lang(ja) { --sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", "Yu Gothic UI", "Meiryo", sans-serif; }
 @media (min-width: 960px) {
   :root { --gutter: max(40px, env(safe-area-inset-left), env(safe-area-inset-right)); --header-h: 76px; }
 }
@@ -49,6 +53,10 @@ a { color: inherit; }
 a, button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button { font: inherit; color: inherit; }
 h1, h2, h3, h4 { margin: 0; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+/* Japanese: headings and leads break between phrases where the browser can tell them apart; the hero list
+   and module titles only where the HTML marks it (<wbr>), so a katakana word never splits on any browser */
+:lang(ja) :is(h1, h2, h3, h4, .stage-lead, .food-motto) { word-break: auto-phrase; }
+:lang(ja) :is(.hero-lede, .module strong) { word-break: keep-all; }
 p, figure, dl, dd { margin: 0; }
 p, dd { text-wrap: pretty; }
 :focus-visible { outline: 3px solid var(--electric-text); outline-offset: 3px; }
@@ -118,7 +126,7 @@ p, dd { text-wrap: pretty; }
 @media (min-width: 960px) {
   .brand img { width: 128px; }
   .nav-desktop { display: flex; gap: 28px; margin-right: 8px; }
-  .nav-desktop a { position: relative; padding: 8px 0; color: #D5D8DD; font-size: 15px; text-decoration: none; transition: color .2s ease; }
+  .nav-desktop a { position: relative; padding: 8px 0; color: #D5D8DD; font-size: 15px; text-decoration: none; white-space: nowrap; transition: color .2s ease; }
   /* underline: grows in on hover, stays under the section being read */
   .nav-desktop a::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: 2px; height: 2px;
@@ -127,12 +135,36 @@ p, dd { text-wrap: pretty; }
   }
   .nav-desktop a[aria-current="true"] { color: #fff; }
   .nav-desktop a[aria-current="true"]::after { background: var(--electric-text); transform: scaleX(1); }
-  .header-cta { display: inline-flex; }
+  .header-cta { display: inline-flex; white-space: nowrap; }
   .menu-btn { display: none; }
+}
+/* English and Japanese labels are longer: their header keeps the menu button until the full row fits */
+@media (min-width: 960px) and (max-width: 1099px) {
+  :is(:lang(en), :lang(ja)) .nav-desktop { display: none; }
+  :is(:lang(en), :lang(ja)) .menu-btn { display: grid; }
 }
 @media (min-width: 960px) and (hover: hover) {
   .nav-desktop a:hover { color: #fff; }
   .nav-desktop a:hover::after { transform: scaleX(1); }
+}
+
+/* language switch: the other two languages in the header, all three in the footer */
+.lang-switch { display: flex; align-items: center; }
+.lang-switch a {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 8px;
+  color: #C9CDD3; font-size: 13px; text-decoration: none; white-space: nowrap; transition: color .2s ease;
+}
+.lang-switch a:active { color: #fff; }
+.lang-switch a[aria-current="page"] {
+  color: #fff; font-weight: 600;
+  text-decoration: underline 2px var(--electric-text); text-underline-offset: 6px;
+}
+.header-inner .lang-switch { margin-right: -8px; } /* the last label's padding, not a gap, sits before the menu button */
+@media (min-width: 960px) {
+  .header-inner .lang-switch { margin-right: 0; }
+}
+@media (hover: hover) {
+  .lang-switch a:hover { color: #fff; }
 }
 
 /* full-screen menu (phones) */

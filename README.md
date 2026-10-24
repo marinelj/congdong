@@ -2,6 +2,8 @@
 
 移动端优先的丛动体育（CONGDONG SPORTS）官方网站。线上地址：https://marinelj.github.io/congdong/
 
+另有英文版 https://marinelj.github.io/congdong/en/ 和日文版 https://marinelj.github.io/congdong/jp/ 。三个页面共用样式、脚本和图片视频，各自是一份完整的 HTML；页眉和页脚有语言切换。改动内容时三个页面要一起改。
+
 已选定的视觉方向：C「夜场霓虹」的配色和排版，加上 A「赛场蓝」的首屏视频。视频自动播放、一直循环：每次播完淡出回到夜景球场照片，停 10 秒，再从头播放；页面上没有播放按钮和进度条。安卓微信不允许网页自动播放视频，所以在微信里改用 JSMpeg 把同一段视频的 MPEG-1 版本画在画布上，看起来一样；iOS 微信先用视频本身，被拒绝时同样换成画布。
 
 ## 开发
@@ -60,7 +62,9 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 
 | 路径 | 内容 |
 |---|---|
-| `index.html` | 首页 |
+| `index.html` | 首页（中文） |
+| `en/index.html`、`jp/index.html` | 英文版、日文版，结构和首页相同，图片等路径多一级 `../` |
+| `src/strings.js` | 脚本里用到的文字（场地筛选的读屏提示、咨询模板、复制结果），按页面语言取用 |
 | `src/main.js` | 交互：导航菜单和当前栏目高亮、场地筛选、咨询面板、复制咨询模板、栏目渐显、首屏视频循环（微信里用画布） |
 | `src/vendor/` | JSMpeg 播放器（微信里在画布上播放首屏视频），原样取自上游，附 MIT 授权 |
 | `src/styles/` | `base.css`（色彩变量、公共组件和动效）、`sections.css`（各区块样式）、`fonts.css` |
@@ -75,10 +79,12 @@ node scripts/browser-check.mjs shot  http://127.0.0.1:4322/ 390 844 out.png [--f
 - 价格只写「380 元/人/天起」，全站只放一个联系人：贺老师。
 - 不使用广告法禁止的绝对化用语，例如「最顶级」。
 - 升学规划写成发展目标，不承诺升学、录取或运动员等级认证结果（广告法第二十四条）。
+- 英文版、日文版按中文版翻译，不增加中文版没有的事实。价格同样只写起价：英文写「From ¥380 per person per day」并注明 RMB；日文写「380元〜」并注明人民元，不用「¥」，以免被看成日元。电话加国际区号 +86。
+- 位置示意图是海报上的原图，地名是中文；英文版、日文版在图片说明和替代文字里给出了对应地名。
 
 ## 字体授权
 
-- 正文用设备自带字体（苹方、鸿蒙、MiSans、微软雅黑等）。
+- 正文用设备自带字体（苹方、鸿蒙、MiSans、微软雅黑等）；英文版用系统西文字体，日文版优先用日文字体（Hiragino、Noto Sans JP、Yu Gothic 等），汉字按日文字形显示。
 - 英文大标题用 Anton，本地托管，SIL Open Font License 1.1，授权文件在 `media/fonts/` 下。
 - 对比页另外用到得意黑、Barlow Condensed、Outfit，也都是 OFL 授权。
 

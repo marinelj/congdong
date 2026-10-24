@@ -194,6 +194,8 @@
 .facts div { display: grid; grid-template-columns: 52px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .facts dt { color: var(--muted); font-size: 14px; }
 .facts dd { font-size: 15px; line-height: 1.65; }
+:lang(en) .facts div { grid-template-columns: 84px 1fr; } /* labels wider than the two-character Chinese ones */
+:lang(ja) .facts div { grid-template-columns: 64px 1fr; }
 .map { margin-top: 48px; }
 .map img { width: 100%; }
 .map figcaption { margin-top: 10px; color: var(--muted); }
@@ -230,6 +232,7 @@
 .menu-day div { display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .menu-day dt { color: var(--muted); font-size: 14px; }
 .menu-day dd { font-size: 14px; line-height: 1.7; }
+:lang(en) .menu-day div { grid-template-columns: 72px 1fr; }
 /* tablets and phones turned sideways show about two rooms at a time */
 @media (orientation: landscape) and (max-width: 959px), (min-width: 600px) and (max-width: 959px) {
   .room { flex-basis: 44%; }
@@ -330,6 +333,7 @@
 @media (hover: hover) {
   .footer-nav a:hover { color: #fff; }
 }
+.footer-lang { margin: -8px -8px 12px; }
 .footer-meta { margin-top: 6px; color: var(--muted); font-size: 12px; }
 @media (min-width: 960px), (orientation: landscape) and (max-height: 540px) {
   .site-footer { padding-bottom: calc(48px + env(safe-area-inset-bottom)); }

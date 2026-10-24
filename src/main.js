@@ -6,7 +6,9 @@
 import jsmpegUrl from "./vendor/jsmpeg.min.js?url";
 import mpegTall from "../media/video/hero-loop-9x16.m2t?url";
 import mpegWide from "../media/video/hero-loop-16x9.m2t?url";
+import { STRINGS } from "./strings.js";
 
+const TEXT = STRINGS[document.documentElement.lang] || STRINGS["zh-CN"];
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -139,24 +141,13 @@ chipBar.addEventListener("click", (event) => {
   const barBottom = chipBar.closest(".chips-bar").getBoundingClientRect().bottom;
   const listTop = facilityList.getBoundingClientRect().top;
   if (listTop < barBottom) window.scrollBy({ top: listTop - barBottom, behavior: glide() });
-  announce(`显示 ${shown} 个场地`);
+  announce(TEXT.shown(shown));
 });
 
-/* inquiry template: execCommand first because WeChat's in-app browser often lacks
-   navigator.clipboard; the textarea goes inside any open dialog, which makes the rest inert */
-const INQUIRY_TEMPLATE = [
-  "【丛动体育 · 咨询】",
-  "咨询内容：集训 / 篮球升学规划",
-  "称呼和电话：",
-  "—— 集训 ——",
-  "单位或队伍、人数（含教练）：",
-  "计划日期：",
-  "意向基地：怀柔基地 / 密云营地",
-  "—— 升学规划 ——",
-  "学生年级：",
-  "篮球水平（是否在校队训练）：",
-  "方向：小升初 / 初升高（争取高中入学 / 冲刺篮球传统学校 / 运动员等级认证）"
-].join("\n");
+/* inquiry template (in the page's language, see strings.js): execCommand first because WeChat's
+   in-app browser often lacks navigator.clipboard; the textarea goes inside any open dialog, which
+   makes the rest inert */
+const INQUIRY_TEMPLATE = TEXT.template.join("\n");
 
 function copyText(text, host) {
   const area = document.createElement("textarea");
@@ -184,9 +175,7 @@ $$("[data-copy-template]").forEach((button) => {
       if (ok) reset = setTimeout(() => button.classList.remove("is-copied"), 2400);
       if (!status) return;
       status.style.whiteSpace = ok ? "" : "pre-line";
-      status.textContent = ok
-        ? "已复制咨询模板，打开微信粘贴、补全后发送即可。"
-        : "浏览器不允许自动复制，请长按选择下面的文字：\n" + INQUIRY_TEMPLATE;
+      status.textContent = ok ? TEXT.copied : TEXT.copyRefused + "\n" + INQUIRY_TEMPLATE;
     });
   });
 });
